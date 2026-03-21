@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Copilot Quota Planner</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #238636;
+      --accent-hover: #2ea043;
+      --blue: #388bfd;
+      --yellow: #d29922;
+      --red: #da3633;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --tag-bg: #21262d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 24px 16px 60px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 28px;
+      font-size: 13px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h2 .pill {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--tag-bg);
+      color: var(--muted);
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input[type="number"], select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 14px;
+    }
+
+    input[type="number"]:focus, select:focus {
+      border-color: var(--blue);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+      margin-bottom: 4px;
+    }
+
+    .range-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .stat-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .stat {
+      background: var(--tag-bg);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+
+    .stat .value {
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+
+    .stat .label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .green  { color: var(--accent-hover); }
+    .blue   { color: var(--blue); }
+    .yellow { color: var(--yellow); }
+    .red    { color: var(--red); }
+
+    /* Progress bar */
+    .progress-wrap {
+      background: var(--tag-bg);
+      border-radius: 20px;
+      height: 10px;
+      overflow: hidden;
+      margin: 10px 0 4px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 20px;
+      transition: width 0.3s, background 0.3s;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pace-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: var(--tag-bg);
+    }
+
+    .pace-indicator .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Main reference table */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 8px 12px;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    .model-tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--tag-bg);
+      color: var(--muted);
+      margin-right: 3px;
+      margin-bottom: 2px;
+    }
+
+    /* Pace table */
+    .pace-section { margin-top: 24px; }
+
+    .pace-section h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .mb16 { margin-bottom: 16px; }
+    .mt24 { margin-top: 24px; }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .footnote {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 20px;
+    }
+
+    .highlight-row {
+      background: rgba(56, 139, 253, 0.06) !important;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* Month tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--tag-bg);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .tab.active, .tab:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: rgba(56, 139, 253, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>GitHub Copilot Quota Planner</h1>
+  <p class="subtitle">Business plan · Quota resets 1st of month at 02:00 · Shows % used on GitHub settings</p>
+
+  <!-- ─── CURRENT STATUS ─────────────────────────────── -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>Current Month Status</h2>
+
+      <label>Current usage shown on GitHub (%)</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:0">
+        <input type="range" id="usageSlider" min="0" max="100" step="0.1" value="59.4"
+          oninput="syncUsage(this.value)" style="margin-bottom:0;flex:1" />
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:10px">
+        <span>0%</span><span id="usageDisplay" style="color:var(--text);font-weight:600">59.4%</span><span>100%</span>
+      </div>
+      <input type="number" id="usageInput" min="0" max="100" step="0.1" value="59.4"
+        oninput="syncUsageFromInput(this.value)" />
+
+      <label>Day of month (today)</label>
+      <input type="number" id="dayInput" min="1" max="31" value="21"
+        oninput="updateStatus()" />
+
+      <label>Month length (days)</label>
+      <select id="monthLen" onchange="updateStatus()">
+        <option value="28">28 days (Feb non-leap)</option>
+        <option value="29">29 days (Feb leap)</option>
+        <option value="30">30 days (Apr/Jun/Sep/Nov)</option>
+        <option value="31" selected>31 days (Jan/Mar/May/Jul/Aug/Oct/Dec)</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>Remaining Budget <span class="pill" id="statusPill">On Track</span></h2>
+
+      <div class="progress-wrap">
+        <div class="progress-bar" id="progressBar" style="width:59.4%;background:var(--yellow)"></div>
+      </div>
+      <div class="progress-labels">
+        <span id="progressUsed">59.4% used</span>
+        <span id="progressRemain">40.6% remaining</span>
+      </div>
+
+      <div class="stat-block" style="margin-top:14px">
+        <div class="stat">
+          <div class="value blue" id="statDaysLeft">10</div>
+          <div class="label">days remaining</div>
+        </div>
+        <div class="stat">
+          <div class="value green" id="statBudgetLeft">40.6%</div>
+          <div class="label">quota remaining</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="statDailyAllowance">4.06%</div>
+          <div class="label">% budget / day (ideal)</div>
+        </div>
+        <div class="stat">
+          <div class="value yellow" id="statCurrentPace">2.83%</div>
+          <div class="label">% / day (current burn)</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="statPerfectTarget">67.7%</div>
+          <div class="label">perfect pace target today</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="statVsTarget">−3.6%</div>
+          <div class="label">vs. perfect target</div>
+        </div>
+      </div>
+
+      <div class="pace-indicator" id="paceIndicator" style="margin-top:14px">
+        <span class="dot" id="paceDot" style="background:var(--accent-hover)"></span>
+        <span id="paceText">You're on track — burn rate is within budget.</span>
+      </div>
+
+      <div style="margin-top:14px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">PROJECTED END-OF-MONTH AT CURRENT PACE</div>
+        <div id="projectionBar" style="font-size:20px;font-weight:600">72.2%</div>
+        <div style="font-size:12px;color:var(--muted)" id="projectionNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── REQUEST BUDGET NOW ─────────────────────────── -->
+  <div class="card mb16">
+    <h2>Requests You Can Make Today (Remaining Budget)</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Based on your remaining daily allowance from current status above</p>
+    <div id="requestsToday" class="stat-block" style="grid-template-columns:repeat(3,1fr)"></div>
+  </div>
+
+  <!-- ─── REFERENCE TABLE ────────────────────────────── -->
+  <div class="card mt24">
+    <h2>Monthly Reference — Uniform Daily Budget</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">
+      If you spread 100% evenly across every day of the month, this is your daily budget and max requests per model tier.
+    </p>
+
+    <div class="tabs" id="monthTabs">
+      <button class="tab" data-days="28" onclick="selectTab(28)">28 days</button>
+      <button class="tab" data-days="29" onclick="selectTab(29)">29 days</button>
+      <button class="tab active" data-days="30" onclick="selectTab(30)">30 days</button>
+      <button class="tab" data-days="31" onclick="selectTab(31)">31 days</button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="refTable">
+        <thead>
+          <tr>
+            <th>Multiplier</th>
+            <th>Cost / request</th>
+            <th>% budget / day</th>
+            <th>Requests / day</th>
+            <th>Requests / month</th>
+            <th>Example models</th>
+          </tr>
+        </thead>
+        <tbody id="refTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── ALL MONTHS COMPACT ─────────────────────────── -->
+  <div class="card mt24">
+    <h2>All Month Lengths — Requests per Day</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Quick reference across all 4 month lengths.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Multiplier</th>
+            <th>Cost/req</th>
+            <th>28 days</th>
+            <th>29 days</th>
+            <th>30 days</th>
+            <th>31 days</th>
+          </tr>
+        </thead>
+        <tbody id="allMonthsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── STRATEGY TIPS ──────────────────────────────── -->
+  <div class="card mt24">
+    <h2>Usage Strategy</h2>
+    <ul style="padding-left:18px;line-height:2;color:var(--muted);font-size:13px">
+      <li>Use <span style="color:var(--text)">0.3× models</span> (Haiku, Flash, GPT Mini) for heavy-iteration tasks — code completion, quick fixes, linting.</li>
+      <li>Use <span style="color:var(--text)">1× models</span> (Sonnet 4.6, GPT-5.2, Gemini) for reasoning, complex refactors, and design questions.</li>
+      <li>Reserve <span style="color:var(--text)">3× models</span> (Opus, large GPT) for architecture decisions, deep code review, or when a 1× model fails multiple times.</li>
+      <li>Check your <em>current burn rate</em> around day 10 — if it exceeds the ideal daily %, shift to cheaper models for the rest of the month.</li>
+      <li>The last 3 days of the month are "sprint" days — if you're under budget you can spend remaining quota freely.</li>
+    </ul>
+  </div>
+
+  <p class="footnote" style="margin-top:20px">
+    Model costs are approximate — GitHub may adjust multipliers. 
+    Actual quota shown at <a href="https://github.com/settings/copilot" target="_blank">github.com/settings/copilot</a>.
+    Business plan quota resets on the 1st of each month at 02:00 UTC.
+  </p>
+
+<script>
+  // ─── DATA ───────────────────────────────────────────
+  const MODELS = [
+    {
+      mult: 0.3,
+      costPct: 0.1,
+      label: "0.3×",
+      color: "var(--accent-hover)",
+      examples: ["Claude Haiku 4.5", "Gemini Flash 3.1", "GPT-5.2 Mini"],
+    },
+    {
+      mult: 1,
+      costPct: 0.3,
+      label: "1×",
+      color: "var(--blue)",
+      examples: ["Claude Sonnet 4.5 / 4.6", "GPT-5.2", "Gemini 2.5 Pro"],
+    },
+    {
+      mult: 3,
+      costPct: 1.0,
+      label: "3×",
+      color: "var(--yellow)",
+      examples: ["Claude Opus 4.6", "GPT-5.1 (older)"],
+    },
+  ];
+
+  const MONTH_DAYS = [28, 29, 30, 31];
+
+  // ─── STATE ──────────────────────────────────────────
+  let selectedTabDays = 30;
+
+  // ─── HELPERS ────────────────────────────────────────
+  function fmt1(n) { return n.toFixed(1); }
+  function fmt2(n) { return n.toFixed(2); }
+  function fmtInt(n) { return Math.floor(n).toLocaleString(); }
+
+  function barColor(pct) {
+    if (pct < 60) return "var(--accent-hover)";
+    if (pct < 80) return "var(--yellow)";
+    return "var(--red)";
+  }
+
+  // ─── SLIDER / INPUT SYNC ────────────────────────────
+  function syncUsage(val) {
+    val = parseFloat(val);
+    document.getElementById("usageInput").value = val;
+    document.getElementById("usageDisplay").textContent = fmt1(val) + "%";
+    updateStatus();
+  }
+
+  function syncUsageFromInput(val) {
+    val = parseFloat(val) || 0;
+    val = Math.min(100, Math.max(0, val));
+    document.getElementById("usageSlider").value = val;
+    document.getElementById("usageDisplay").textContent = fmt1(val) + "%";
+    updateStatus();
+  }
+
+  // ─── MAIN STATUS UPDATE ─────────────────────────────
+  function updateStatus() {
+    const usage = parseFloat(document.getElementById("usageInput").value) || 0;
+    const day   = parseInt(document.getElementById("dayInput").value) || 1;
+    const total = parseInt(document.getElementById("monthLen").value) || 31;
+
+    const remain       = Math.max(0, 100 - usage);
+    const daysLeft     = Math.max(0, total - day);
+    const idealDay     = daysLeft > 0 ? remain / daysLeft : 0;
+    const burnRate     = day > 0 ? usage / day : 0;
+    const projected    = usage + burnRate * daysLeft;
+    const perfectTarget = 100 * day / total;  // usage% that puts you on exact track to 100%
+    const vsTarget      = usage - perfectTarget;
+
+    // Progress bar
+    const bar = document.getElementById("progressBar");
+    bar.style.width   = Math.min(100, usage) + "%";
+    bar.style.background = barColor(usage);
+
+    document.getElementById("progressUsed").textContent   = fmt2(usage) + "% used";
+    document.getElementById("progressRemain").textContent = fmt2(remain) + "% remaining";
+
+    // Stats
+    document.getElementById("statDaysLeft").textContent     = daysLeft;
+    document.getElementById("statBudgetLeft").textContent   = fmt2(remain) + "%";
+    document.getElementById("statDailyAllowance").textContent = fmt2(idealDay) + "%";
+    document.getElementById("statCurrentPace").textContent  = fmt2(burnRate) + "%";
+
+    const ptEl = document.getElementById("statPerfectTarget");
+    ptEl.textContent = fmt2(perfectTarget) + "%";
+    ptEl.style.color = "var(--blue)";
+
+    const vtEl = document.getElementById("statVsTarget");
+    const sign = vsTarget >= 0 ? "+" : "";
+    vtEl.textContent = sign + fmt2(vsTarget) + "%";
+    vtEl.style.color = vsTarget > 2 ? "var(--red)" : vsTarget > 0 ? "var(--yellow)" : "var(--accent-hover)";
+
+    // Pace indicator
+    const paceRatio = idealDay > 0 ? burnRate / idealDay : 0;
+    const pill = document.getElementById("statusPill");
+    const dot  = document.getElementById("paceDot");
+    const txt  = document.getElementById("paceText");
+
+    if (burnRate === 0) {
+      pill.textContent = "No usage";
+      dot.style.background = "var(--muted)";
+      txt.textContent = "No usage recorded yet.";
+    } else if (paceRatio < 0.85) {
+      pill.textContent = "Under Budget";
+      dot.style.background = "var(--accent-hover)";
+      txt.textContent = `✓ Burn rate (${fmt2(burnRate)}%/day) is well below ideal (${fmt2(idealDay)}%/day). You have headroom.`;
+    } else if (paceRatio < 1.10) {
+      pill.textContent = "On Track";
+      dot.style.background = "var(--blue)";
+      txt.textContent = `Burn rate (${fmt2(burnRate)}%/day) is close to ideal (${fmt2(idealDay)}%/day). Keep this pace.`;
+    } else if (paceRatio < 1.35) {
+      pill.textContent = "Slightly Over";
+      dot.style.background = "var(--yellow)";
+      txt.textContent = `⚠ Burn rate (${fmt2(burnRate)}%/day) exceeds ideal (${fmt2(idealDay)}%/day). Consider shifting to cheaper models.`;
+    } else {
+      pill.textContent = "Over Budget";
+      dot.style.background = "var(--red)";
+      txt.textContent = `✕ Burn rate (${fmt2(burnRate)}%/day) significantly exceeds ideal (${fmt2(idealDay)}%/day). Switch to 0.3× models now.`;
+    }
+
+    // Projection
+    const projEl = document.getElementById("projectionBar");
+    const projNote = document.getElementById("projectionNote");
+    projEl.textContent = fmt1(Math.min(projected, 100)) + "%";
+    projEl.style.color = projected > 100 ? "var(--red)" : projected > 90 ? "var(--yellow)" : "var(--accent-hover)";
+    if (projected > 100) {
+      projNote.textContent = `⚠ At current pace you'll exhaust quota ~${fmt1((100 - usage) / burnRate)} days from now (day ~${Math.round(day + (100 - usage) / burnRate)}).`;
+    } else {
+      projNote.textContent = `You'll end the month at ~${fmt1(projected)}% — ${fmt1(100 - projected)}% leftover.`;
+    }
+
+    // Requests today
+    updateRequestsToday(idealDay);
+  }
+
+  function updateRequestsToday(idealDay) {
+    const container = document.getElementById("requestsToday");
+    container.innerHTML = MODELS.map(m => {
+      const reqs = idealDay / m.costPct;
+      return `
+        <div class="stat">
+          <div class="value" style="color:${m.color}">${fmtInt(reqs)}</div>
+          <div class="label">${m.label} models / day<br>
+            <span style="color:var(--muted);font-size:10px">(${m.costPct}% each)</span>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  // ─── REFERENCE TABLE ────────────────────────────────
+  function selectTab(days) {
+    selectedTabDays = days;
+    document.querySelectorAll(".tab").forEach(t => {
+      t.classList.toggle("active", parseInt(t.dataset.days) === days);
+    });
+    renderRefTable(days);
+  }
+
+  function renderRefTable(days) {
+    const dailyBudgetPct = 100 / days;
+    const tbody = document.getElementById("refTableBody");
+    tbody.innerHTML = MODELS.map(m => {
+      const reqs    = dailyBudgetPct / m.costPct;
+      const monthly = reqs * days;
+      return `
+        <tr>
+          <td><strong style="color:${m.color}">${m.label}</strong></td>
+          <td>${m.costPct}%</td>
+          <td>${fmt2(dailyBudgetPct)}%</td>
+          <td style="font-weight:600">${fmtInt(reqs)}</td>
+          <td>${fmtInt(monthly)}</td>
+          <td>${m.examples.map(e => `<span class="model-tag">${e}</span>`).join("")}</td>
+        </tr>`;
+    }).join("");
+  }
+
+  // ─── ALL MONTHS TABLE ───────────────────────────────
+  function renderAllMonths() {
+    const tbody = document.getElementById("allMonthsBody");
+    tbody.innerHTML = MODELS.map(m => {
+      const cells = MONTH_DAYS.map(d => {
+        const reqs = (100 / d) / m.costPct;
+        return `<td style="font-weight:600">${fmtInt(reqs)}</td>`;
+      }).join("");
+      return `
+        <tr>
+          <td><strong style="color:${m.color}">${m.label}</strong></td>
+          <td>${m.costPct}%</td>
+          ${cells}
+        </tr>`;
+    }).join("");
+  }
+
+  // ─── INIT ───────────────────────────────────────────
+  renderRefTable(selectedTabDays);
+  renderAllMonths();
+  updateStatus();
+</script>
+</body>
+</html>
