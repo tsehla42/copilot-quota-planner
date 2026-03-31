@@ -34,7 +34,7 @@ Direct fetch to api.github.com (CORS: Access-Control-Allow-Origin: *)
 Frontend updates slider + calculates burn rate / projection / daily budget
 ```
 
-**Key Design Principle**: No server, no proxy, no env vars. All GitHub API calls are made directly from the browser. `api.github.com` returns permissive CORS headers.
+**Key Design Principle**: No server, no proxy, no env vars. All GitHub API calls are made directly from the browser. 
 
 ## Token Requirements
 
@@ -50,17 +50,10 @@ Frontend updates slider + calculates burn rate / projection / daily budget
 3. Send any Copilot Chat message (`Ctrl+Alt+I`)
 4. Click the `user` request → Request Headers → copy value after `Authorization: token `
 
-**Alternative:** `secret-tool search application vscode` (Linux) or `gh auth token` (after `gh auth login`)
-
 ## Development Workflow
 
 ### Running Locally
 Just open `index.html` in a browser — no server, no install, no build.
-
-```bash
-# Fast open in default browser (Linux):
-xdg-open index.html
-```
 
 ### Auth Storage (localStorage)
 | Key | Value |
@@ -76,6 +69,16 @@ xdg-open index.html
 - **Custom number spinners**: `.num-wrap` / `.num-spin` CSS classes wrap `<input type="number">` with custom ▲▼ buttons driven by `stepNum(id, delta, min, max)`
 - **Status indicators**: Green (under budget) → Yellow (slightly over) → Red (over budget)
 - **Modal pattern**: Single `#authModal` overlay; content swapped via `#modalContent` innerHTML
+- **Toggle switch**: `.toggle-switch` / `.toggle-track` / `.toggle-knob` CSS — `#reqModeChk` checkbox toggles `%` vs request-count display throughout the budget card (off by default)
+- **No inline styles**: use utility CSS classes (`.fw-600`, `.fs-11`, `.muted`, `.mb-*`, `.d-block`, `.pr-88`, etc.) or component classes; inline `style=` only for dynamic JS-driven values like colors
+
+### Global State
+```js
+let quotaEntitlement = 300;  // updated from API response (pi.entitlement)
+let quotaRemaining   = null; // null until fetched; stores pi.remaining
+let calCustomDayoffs = new Set(); // ISO date strings marked as days off
+let calViewYear / calViewMonth;   // calendar popup month navigation
+```
 
 ### Key JS Functions
 
@@ -91,16 +94,35 @@ signOut()             // clears gh_token, gh_user from localStorage
 
 // Core fetch
 fetchRealUsage()      // tries copilot_internal/user → falls back to /user for ghp_ tokens
+                      // on success: sets quotaEntitlement + quotaRemaining globals
 autoFetchOnLoad()     // silent fetch on page load if token is saved
 
 // UI helpers
 stepNum(id, delta, min, max) // increment/decrement number inputs, dispatches 'input' event
 syncUsage(val)        // syncs slider ↔ number input ↔ display label
 updateStatus()        // main calculator: burn rate, projection, pace indicator
+                      // respects #reqModeChk toggle for % vs request-count display
+                      // perfect pace target is working-days-aware (not raw calendar days)
 
 // Tables
-renderAllMonths()     // populates #allMonthsBody: req/day per model × 4 month lengths
+renderAllMonths()     // populates #allMonthsBody from MODELS array (all 4 entries incl. Grok)
+updateRequestsToday() // populates #requestsToday — filters MODELS by showInToday: true (excludes Grok)
 ```
+
+### MODELS Array
+All model tiers live in `MODELS`; `showInToday` controls visibility in the daily-budget card:
+```js
+{ mult, costPct, label, color, examples[], showInToday }
+// 0.25× Grok Code Fast 1    — showInToday: false (table only)
+// 0.3×  Claude Haiku etc.   — showInToday: true
+// 1×    Claude Sonnet etc.  — showInToday: true
+// 3×    Claude Opus etc.    — showInToday: true
+```
+
+### Perfect Pace Target (working-days-aware)
+`perfectTarget = 100 * workingDaysElapsed / totalWorkingDays`
+
+This accounts for excluded weekends and calendar day-offs. `workingDaysElapsed` counts working days 1→today inclusive; `totalWorkingDays = workingDaysElapsed + workingDaysLeft`.
 
 ## GitHub API Integration
 
@@ -121,6 +143,8 @@ renderAllMonths()     // populates #allMonthsBody: req/day per model × 4 month 
 |---------|----------|
 | Fetch returns 404 on `copilot_internal/user` | Token is a `ghp_` PAT — needs OAuth `ghu_` token |
 | Token works but quota % not shown | Same — only `ghu_` tokens have the `github.copilot` scope |
+| Req-mode toggle shows wrong counts | `quotaRemaining`/`quotaEntitlement` come from API; without fetch they default to 300 entitlement with counts derived from usage % |
 | Calculations incorrect | Check that usage % and day inputs are valid numbers (1–31 for day) |
 | Day shows yesterday | Page was loaded on the previous day — refresh |
+| Perfect pace target doesn't change with days-off | Expected: it's working-days-aware, so toggling weekends/calendar offs does shift it |
 | XSS via user data | All user-supplied strings rendered via `escHtml()` before innerHTML injection |

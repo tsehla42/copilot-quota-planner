@@ -404,9 +404,9 @@
     
     /* ── Clear button ── */
     .btn-clear {
-      padding: 2px 7px; font-size: 12px; border: 1px solid var(--border); border-radius: 4px;
-      background: var(--tag-bg); color: var(--muted); cursor: pointer; flex-shrink: 0;
-      transition: border-color 0.15s, color 0.15s; white-space: nowrap;
+      padding: 7px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--tag-bg); color: var(--text); cursor: pointer; flex-shrink: 0;
+      transition: all 0.15s; white-space: nowrap;
     }
     .btn-clear:hover { border-color: var(--red); color: var(--red); }
  
@@ -551,15 +551,15 @@
         <button onclick="openCalendar()" class="cal-open-btn" title="Pick specific days off in a calendar"><span class="fs-18">📅</span> Calendar</button>
       </div>
       <div class="d-flex ai-center gap-8 mb-10">
-        <span class="fs-13">Days selected in calendar: <span id="calDayoffCount" class="fw-600 text-main">0</span></span>
+        <span>Days selected in calendar: <span id="calDayoffCount" class="fw-600 text-main">0</span></span>
         <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all custom day-offs">🗑 Clear</button>
       </div>
       <div class="d-flex ai-center gap-8 req-toggle-row">
-        <label class="toggle-switch" title="Show remaining budget as requests instead of percentages">
+        <label class="toggle-switch d-flex ai-center gap-8" title="Show remaining budget as requests instead of percentages" style="cursor:pointer">
           <input type="checkbox" id="reqModeChk" onchange="updateStatus()" />
           <span class="toggle-track"><span class="toggle-knob"></span></span>
+          <span class="fs-13 muted">Show as requests</span>
         </label>
-        <span class="fs-13 muted">Show as requests</span>
       </div>
     </div>
 
@@ -703,19 +703,19 @@
   function fmt2(n) { return n.toFixed(2); }
   function fmtInt(n) { return Math.floor(n).toLocaleString(); }
 
-  function barColor(pct) {
-    if (pct < 60) return "var(--accent-hover)";
-    if (pct < 80) return "var(--yellow)";
+  function barColor(percentage) {
+    if (percentage < 60) return "var(--accent-hover)";
+    if (percentage < 80) return "var(--yellow)";
     return "var(--red)";
   }
 
   function stepNum(id, delta, min, max) {
-    const el = document.getElementById(id);
-    const raw = (parseFloat(el.value) || 0) + delta;
+    const inputEl = document.getElementById(id);
+    const rawValue = (parseFloat(inputEl.value) || 0) + delta;
     const decimals = (String(delta).split('.')[1] || '').length;
-    const v = Math.min(max, Math.max(min, decimals > 0 ? parseFloat(raw.toFixed(decimals)) : raw));
-    el.value = decimals > 0 ? v.toFixed(decimals) : v;
-    el.dispatchEvent(new Event('input'));
+    const clampedValue = Math.min(max, Math.max(min, decimals > 0 ? parseFloat(rawValue.toFixed(decimals)) : rawValue));
+    inputEl.value = decimals > 0 ? clampedValue.toFixed(decimals) : clampedValue;
+    inputEl.dispatchEvent(new Event('input'));
   }
 
   // ─── GITHUB AUTH & API ───────────────────────────────────
@@ -845,16 +845,16 @@
       if (res.status === 403) throw new Error('Token is forbidden (403) — check scopes');
       throw new Error(`GitHub API returned ${res.status}`);
     }
-    const u = await res.json();
+    const userData = await res.json();
     // Sanitize before storing
     localStorage.setItem('gh_token', token);
-    localStorage.setItem('gh_user', JSON.stringify({ login: u.login, name: u.name || '', avatar_url: u.avatar_url }));
+    localStorage.setItem('gh_user', JSON.stringify({ login: userData.login, name: userData.name || '', avatar_url: userData.avatar_url }));
     renderAuthCard();
   }
 
   // ── Sign out ─────────────────────────────────────────────
   function signOut() {
-    ['gh_token','gh_user','gh_client_id','gh_client_secret'].forEach(k => localStorage.removeItem(k));
+    ['gh_token','gh_user','gh_client_id','gh_client_secret'].forEach(key => localStorage.removeItem(key));
     renderAuthCard();
     _setFetchStatus('', '');
   }
@@ -895,9 +895,9 @@
         // ghp_ token — no copilot scope; verify token is valid and guide user
         const userRes = await fetch(`${GH_API}/user`, { headers: ghHeaders() });
         if (!userRes.ok) throw new Error(`Token invalid (${userRes.status}). Sign out and reconnect.`);
-        const u = await userRes.json();
+        const fallbackUser = await userRes.json();
         _setFetchStatus(
-          `✓ Token valid for @${escHtml(u.login)} · Real quota % needs a ghu_ OAuth token — see "Connect token" ↑ for step-by-step instructions`,
+          `✓ Token valid for @${escHtml(fallbackUser.login)} · Real quota % needs a ghu_ OAuth token — see "Connect token" ↑ for step-by-step instructions`,
           'var(--blue)'
         );
         return;
@@ -944,8 +944,8 @@
         syncUsage(pctUsed);
         _setFetchStatus(`✓ ${fmt1(pctUsed)}% chat quota used · ${chat.remaining}/${chat.entitlement} remaining · free plan`, 'var(--accent-hover)');
       } else {
-        const u = data.organization_login_list?.[0] || '';
-        _setFetchStatus(`✓ Connected${u ? ` via ${escHtml(u)}` : ''} · ${plan} plan · quota_snapshots not present in response — enter usage % manually`, 'var(--blue)');
+        const orgLogin = data.organization_login_list?.[0] || '';
+        _setFetchStatus(`✓ Connected${orgLogin ? ` via ${escHtml(orgLogin)}` : ''} · ${plan} plan · quota_snapshots not present in response — enter usage % manually`, 'var(--blue)');
       }
     } catch (e) {
       console.error('fetchRealUsage:', e);
@@ -983,29 +983,29 @@
 
   // Returns number of custom dayoffs that fall on working days (not already weekend-excluded)
   function countEffectiveDayoffs() {
-    const excWknd = getExcludeWeekends();
+    const excludeWeekends = getExcludeWeekends();
     let count = 0;
     for (const iso of calCustomDayoffs) {
       const d = new Date(iso + 'T00:00:00');
       const dow = d.getDay();
       // If we're already excluding weekends and this is a weekend, don't double-count
-      if (excWknd && (dow === 0 || dow === 6)) continue;
+      if (excludeWeekends && (dow === 0 || dow === 6)) continue;
       count++;
     }
     return count;
   }
 
   function onWeekendsToggle() {
-    const excWknd = getExcludeWeekends();
+    const excludeWeekends = getExcludeWeekends();
     // When enabling weekend exclusion, clear weekend dates from custom dayoffs
-    if (excWknd) {
+    if (excludeWeekends) {
       for (const iso of [...calCustomDayoffs]) {
         const dow = new Date(iso + 'T00:00:00').getDay();
         if (dow === 0 || dow === 6) calCustomDayoffs.delete(iso);
       }
       document.getElementById('calDayoffCount').textContent = calCustomDayoffs.size;
     }
-    document.getElementById('calExcludeWeekendsChk').checked = excWknd;
+    document.getElementById('calExcludeWeekendsChk').checked = excludeWeekends;
     renderCalGrid();
     updateStatus();
   }
@@ -1059,7 +1059,7 @@
   }
 
   function renderCalGrid() {
-    const excWknd = document.getElementById('calExcludeWeekendsChk').checked;
+    const excludeWeekends = document.getElementById('calExcludeWeekendsChk').checked;
     const today = new Date();
     const todayY = today.getFullYear();
     const todayM = today.getMonth();
@@ -1091,13 +1091,13 @@
       if (isToday) cls += ' cal-today';
       if (isDayoff) {
         cls += ' cal-dayoff';
-      } else if (isWeekend && excWknd) {
+      } else if (isWeekend && excludeWeekends) {
         cls += ' cal-weekend-off';
       } else if (isWeekend) {
         cls += ' cal-weekend';
       }
 
-      const clickable = !(isWeekend && excWknd);
+      const clickable = !(isWeekend && excludeWeekends);
       const onclick = clickable ? `onclick="calToggleDay('${iso}')"` : '';
       html += `<div class="${cls}" ${onclick} title="${iso}">${d}</div>`;
     }
@@ -1147,149 +1147,157 @@
 
   // ─── MAIN STATUS UPDATE ─────────────────────────────
   function updateStatus() {
-    const usage = parseFloat(document.getElementById("usageInput").value) || 0;
-    const day   = parseInt(document.getElementById("dayInput").value) || 1;
-    const total = parseInt(document.getElementById("monthLen").value) || 31;
-    const excWknd = getExcludeWeekends();
-    const reqMode = document.getElementById('reqModeChk')?.checked || false;
-    const entitle = quotaEntitlement || 300;
+    const usage          = parseFloat(document.getElementById("usageInput").value) || 0;
+    const currentDay     = parseInt(document.getElementById("dayInput").value) || 1;
+    const totalDays      = parseInt(document.getElementById("monthLen").value) || 31;
+    const excludeWeekends = getExcludeWeekends();
+    const requestMode    = document.getElementById('reqModeChk')?.checked || false;
+    const entitlement    = quotaEntitlement || 300;
 
-    const remain   = Math.max(0, 100 - usage);
-    const daysLeft = Math.max(0, total - day);
+    const remainingPct   = Math.max(0, 100 - usage);
+    const calendarDaysLeft = Math.max(0, totalDays - currentDay);
 
     // Working days remaining (after today)
     let workingDaysLeft = 0;
-    for (let d = day + 1; d <= total; d++) {
+    for (let d = currentDay + 1; d <= totalDays; d++) {
       const dow = new Date(calViewYear, calViewMonth, d).getDay();
       const iso = `${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      if (excWknd && (dow === 0 || dow === 6)) continue;
+      if (excludeWeekends && (dow === 0 || dow === 6)) continue;
       if (calCustomDayoffs.has(iso)) continue;
       workingDaysLeft++;
     }
 
     // Working days elapsed (days 1 through today inclusive)
     let workingDaysElapsed = 0;
-    for (let d = 1; d <= day; d++) {
+    for (let d = 1; d <= currentDay; d++) {
       const dow = new Date(calViewYear, calViewMonth, d).getDay();
       const iso = `${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      if (excWknd && (dow === 0 || dow === 6)) continue;
+      if (excludeWeekends && (dow === 0 || dow === 6)) continue;
       if (calCustomDayoffs.has(iso)) continue;
       workingDaysElapsed++;
     }
     const totalWorkingDays = workingDaysElapsed + workingDaysLeft;
 
-    if (workingDaysLeft === 0 && daysLeft > 0) workingDaysLeft = 1;
+    if (workingDaysLeft === 0 && calendarDaysLeft > 0) workingDaysLeft = 1;
 
-    const idealDay  = workingDaysLeft > 0 ? remain / workingDaysLeft : 0;
-    const burnRate  = day > 0 ? usage / day : 0;
-    const projected = usage + burnRate * daysLeft;
+    const idealDailyBudget = workingDaysLeft > 0 ? remainingPct / workingDaysLeft : 0;
+    const burnRate         = currentDay > 0 ? usage / currentDay : 0;
+    const projected        = usage + burnRate * calendarDaysLeft;
     // Perfect pace: uniform burn across calendar days (simple, predictable benchmark)
-    const perfectTarget = 100 * day / total;
-    const vsTarget  = usage - perfectTarget;
+    const perfectTarget    = 100 * currentDay / totalDays;
+    const vsTarget         = usage - perfectTarget;
 
     // Request equivalents for req-mode toggle
-    const usedReqs   = quotaRemaining !== null ? (entitle - quotaRemaining) : Math.round(usage / 100 * entitle);
-    const remainReqs = entitle - usedReqs;
-    const idealDayReqs        = Math.round(idealDay / 100 * entitle);
-    const burnRateReqs        = +(burnRate / 100 * entitle).toFixed(1);
-    const perfectTargetReqs   = Math.round(perfectTarget / 100 * entitle);
-    const vsTargetReqs        = usedReqs - perfectTargetReqs;
+    const usedRequests          = quotaRemaining !== null ? (entitlement - quotaRemaining) : Math.round(usage / 100 * entitlement);
+    const remainingRequests     = entitlement - usedRequests;
+    const idealDailyRequests    = Math.round(idealDailyBudget / 100 * entitlement);
+    const burnRateRequests      = +(burnRate / 100 * entitlement).toFixed(1);
+    const perfectTargetRequests = Math.round(perfectTarget / 100 * entitlement);
+    const vsTargetRequests      = usedRequests - perfectTargetRequests;
 
     // Progress bar
     const bar = document.getElementById("progressBar");
-    bar.style.width   = Math.min(100, usage) + "%";
+    bar.style.width      = Math.min(100, usage) + "%";
     bar.style.background = barColor(usage);
 
-    if (reqMode) {
-      document.getElementById("progressUsed").textContent   = usedReqs + " used";
-      document.getElementById("progressRemain").textContent = remainReqs + " remaining";
+    if (requestMode) {
+      document.getElementById("progressUsed").textContent   = usedRequests + " used";
+      document.getElementById("progressRemain").textContent = remainingRequests + " remaining";
     } else {
       document.getElementById("progressUsed").textContent   = fmt2(usage) + "% used";
-      document.getElementById("progressRemain").textContent = fmt2(remain) + "% remaining";
+      document.getElementById("progressRemain").textContent = fmt2(remainingPct) + "% remaining";
     }
 
     // Stats
-    document.getElementById("statDaysLeft").textContent = daysLeft;
+    const displayDaysLeft = (excludeWeekends || calCustomDayoffs.size > 0) ? workingDaysLeft : calendarDaysLeft;
+    document.getElementById("statDaysLeft").textContent = displayDaysLeft;
 
-    if (reqMode) {
-      document.getElementById("statBudgetLeft").textContent          = remainReqs;
+    if (requestMode) {
+      document.getElementById("statBudgetLeft").textContent          = remainingRequests;
       document.getElementById("statBudgetLeftLabel").textContent     = "requests remaining";
-      document.getElementById("statDailyAllowance").textContent      = idealDayReqs + " req";
+      document.getElementById("statDailyAllowance").textContent      = idealDailyRequests + " req";
       document.getElementById("statDailyAllowanceLabel").textContent = "req / day (ideal)";
-      document.getElementById("statCurrentPace").textContent         = burnRateReqs + " req";
+      document.getElementById("statCurrentPace").textContent         = burnRateRequests + " req";
       document.getElementById("statCurrentPaceLabel").textContent    = "req / day (current burn)";
     } else {
-      document.getElementById("statBudgetLeft").textContent          = fmt2(remain) + "%";
+      document.getElementById("statBudgetLeft").textContent          = fmt2(remainingPct) + "%";
       document.getElementById("statBudgetLeftLabel").textContent     = "quota remaining";
-      document.getElementById("statDailyAllowance").textContent      = fmt2(idealDay) + "%";
+      document.getElementById("statDailyAllowance").textContent      = fmt2(idealDailyBudget) + "%";
       document.getElementById("statDailyAllowanceLabel").textContent = "% / day (ideal)";
       document.getElementById("statCurrentPace").textContent         = fmt2(burnRate) + "%";
       document.getElementById("statCurrentPaceLabel").textContent    = "% / day (current burn)";
     }
 
-    const ptEl = document.getElementById("statPerfectTarget");
-    ptEl.textContent = reqMode ? (perfectTargetReqs + " req") : (fmt2(perfectTarget) + "%");
-    ptEl.style.color = "var(--blue)";
+    const perfectTargetEl = document.getElementById("statPerfectTarget");
+    perfectTargetEl.textContent = requestMode ? (perfectTargetRequests + " req") : (fmt2(perfectTarget) + "%");
+    perfectTargetEl.style.color = "var(--blue)";
 
-    const vtEl = document.getElementById("statVsTarget");
-    if (reqMode) {
-      vtEl.textContent = (vsTargetReqs >= 0 ? "+" : "") + vsTargetReqs + " req";
+    const vsTargetEl = document.getElementById("statVsTarget");
+    if (requestMode) {
+      vsTargetEl.textContent = (vsTargetRequests >= 0 ? "+" : "") + vsTargetRequests + " req";
     } else {
-      vtEl.textContent = (vsTarget >= 0 ? "+" : "") + fmt2(vsTarget) + "%";
+      vsTargetEl.textContent = (vsTarget >= 0 ? "+" : "") + fmt2(vsTarget) + "%";
     }
-    vtEl.style.color = vsTarget > 2 ? "var(--red)" : vsTarget > 0 ? "var(--yellow)" : "var(--accent-hover)";
+    vsTargetEl.style.color = vsTarget > 2 ? "var(--red)" : vsTarget > 0 ? "var(--yellow)" : "var(--accent-hover)";
 
     // Pace indicator
-    const paceRatio = idealDay > 0 ? burnRate / idealDay : 0;
-    const pill = document.getElementById("statusPill");
-    const dot  = document.getElementById("paceDot");
-    const txt  = document.getElementById("paceText");
-    const brDisp = reqMode ? `${burnRateReqs} req/day` : `${fmt2(burnRate)}%/day`;
-    const idDisp = reqMode ? `${idealDayReqs} req/day` : `${fmt2(idealDay)}%/day`;
+    const paceRatio    = idealDailyBudget > 0 ? burnRate / idealDailyBudget : 0;
+    const pill         = document.getElementById("statusPill");
+    const dot          = document.getElementById("paceDot");
+    const paceTextEl   = document.getElementById("paceText");
+    const burnRateDisp = requestMode ? `${burnRateRequests} req/day` : `${fmt2(burnRate)}%/day`;
+    const idealDisp    = requestMode ? `${idealDailyRequests} req/day` : `${fmt2(idealDailyBudget)}%/day`;
 
-    if (burnRate === 0) {
+    if (calendarDaysLeft === 0) {
+      pill.textContent = "Month Complete";
+      dot.style.background = usage >= 100 ? "var(--red)" : "var(--accent-hover)";
+      const endOfMonthLeftover = requestMode ? `${remainingRequests} req leftover` : `${fmt2(remainingPct)}% leftover`;
+      paceTextEl.textContent = usage >= 100
+        ? `✕ Quota exhausted — ${fmt2(usage)}% used by end of month.`
+        : `✓ Month complete — ${fmt2(usage)}% used, ${endOfMonthLeftover}.`;
+    } else if (burnRate === 0) {
       pill.textContent = "No usage";
       dot.style.background = "var(--muted)";
-      txt.textContent = "No usage recorded yet.";
+      paceTextEl.textContent = "No usage recorded yet.";
     } else if (paceRatio < 0.85) {
       pill.textContent = "Under Budget";
       dot.style.background = "var(--accent-hover)";
-      txt.textContent = `✓ Burn rate (${brDisp}) is well below ideal (${idDisp}). You have headroom.`;
+      paceTextEl.textContent = `✓ Burn rate (${burnRateDisp}) is well below ideal (${idealDisp}). You have headroom.`;
     } else if (paceRatio < 1.10) {
       pill.textContent = "On Track";
       dot.style.background = "var(--blue)";
-      txt.textContent = `✓ Burn rate (${brDisp}) is close to ideal (${idDisp}). Keep this pace.`;
+      paceTextEl.textContent = `✓ Burn rate (${burnRateDisp}) is close to ideal (${idealDisp}). Keep this pace.`;
     } else if (paceRatio < 1.35) {
       pill.textContent = "Slightly Over";
       dot.style.background = "var(--yellow)";
-      txt.textContent = `⚠ Burn rate (${brDisp}) exceeds ideal (${idDisp}). Consider shifting to cheaper models.`;
+      paceTextEl.textContent = `⚠ Burn rate (${burnRateDisp}) exceeds ideal (${idealDisp}). Consider shifting to cheaper models.`;
     } else {
       pill.textContent = "Over Budget";
       dot.style.background = "var(--red)";
-      txt.textContent = `✕ Burn rate (${brDisp}) significantly exceeds ideal (${idDisp}). Switch to 0.3× models now.`;
+      paceTextEl.textContent = `✕ Burn rate (${burnRateDisp}) significantly exceeds ideal (${idealDisp}). Switch to 0.3× models now.`;
     }
 
     // Projection
-    const projEl = document.getElementById("projectionLine");
-    const pColor = projected > 100 ? "var(--red)" : projected > 90 ? "var(--yellow)" : "var(--accent-hover)";
-    if (reqMode) {
-      const projUsedReqs = Math.min(entitle, Math.round(projected / 100 * entitle));
+    const projEl  = document.getElementById("projectionLine");
+    const projColor = projected > 100 ? "var(--red)" : projected > 90 ? "var(--yellow)" : "var(--accent-hover)";
+    if (requestMode) {
+      const projUsedRequests = Math.min(entitlement, Math.round(projected / 100 * entitlement));
       if (projected > 100) {
-        projEl.innerHTML = `<span class="proj-value" style="color:${pColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${burnRate > 0 ? Math.round(day + (100 - usage) / burnRate) : '?'}</span>`;
+        projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedRequests} req</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${burnRate > 0 ? Math.round(currentDay + (100 - usage) / burnRate) : '?'}</span>`;
       } else {
-        projEl.innerHTML = `<span class="proj-value" style="color:${pColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ${entitle - projUsedReqs} req leftover</span>`;
+        projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedRequests} req</span> <span class="fs-12 muted">— ${entitlement - projUsedRequests} req leftover</span>`;
       }
     } else {
-      const pPct = fmt1(Math.min(projected, 100));
+      const projPct = fmt1(Math.min(projected, 100));
       if (projected > 100) {
-        projEl.innerHTML = `<span class="proj-value" style="color:${pColor}">${pPct}%</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${burnRate > 0 ? Math.round(day + (100 - usage) / burnRate) : '?'}</span>`;
+        projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${burnRate > 0 ? Math.round(currentDay + (100 - usage) / burnRate) : '?'}</span>`;
       } else {
-        projEl.innerHTML = `<span class="proj-value" style="color:${pColor}">${pPct}%</span> <span class="fs-12 muted">— ${fmt1(100 - projected)}% leftover</span>`;
+        projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ${fmt1(100 - projected)}% leftover</span>`;
       }
     }
 
     // Requests today
-    updateRequestsToday(idealDay);
+    updateRequestsToday(idealDailyBudget);
   }
 
   function updateRequestsToday(idealDay) {
