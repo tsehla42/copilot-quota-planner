@@ -54,3 +54,45 @@ export function signOutAll() {
   localStorage.removeItem(GH_ACCOUNTS_KEY);
   localStorage.removeItem(GH_SELECTED_KEY);
 }
+
+export const GH_API = 'https://api.github.com';
+
+export function validateTokenFormat(token) {
+  return /^(ghp_|github_pat_|gho_|ghu_)[A-Za-z0-9_]{5,}$/.test(token);
+}
+
+export async function addAccounts(tokenArray) {
+  const added = [];
+  const failed = [];
+
+  for (const raw of tokenArray) {
+    const token = raw.trim();
+    if (!token) continue;  // skip blank
+    if (!validateTokenFormat(token)) {
+      failed.push({ token, reason: 'Invalid token format — must start with ghp_, ghu_, gho_, or github_pat_' });
+      continue;
+    }
+    try {
+      const res = await fetch(`${GH_API}/user`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
+      });
+      if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+      const user = await res.json();
+      const account = {
+        id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        token,
+        login: user.login,
+        name: user.name || '',
+        avatar_url: user.avatar_url || '',
+        plan: null,
+        lastQuota: null,
+      };
+      addAccountObject(account);
+      added.push(account);
+    } catch (e) {
+      failed.push({ token, reason: e.message });
+    }
+  }
+
+  return { added: added.length, failed };
+}

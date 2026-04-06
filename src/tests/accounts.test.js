@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getAccounts, getSelectedId, saveAccounts, saveSelectedId,
   getSelectedAccount, addAccountObject, removeAccount, signOutAll,
+  addAccounts, validateTokenFormat,
 } from '../js/accounts.js';
 
 beforeEach(() => {
@@ -154,5 +155,65 @@ describe('signOutAll', () => {
     signOutAll();
     expect(getAccounts()).toEqual([]);
     expect(getSelectedId()).toBeNull();
+  });
+});
+
+describe('validateTokenFormat', () => {
+  it('accepts ghu_ tokens', () => expect(validateTokenFormat('ghu_abc123')).toBe(true));
+  it('accepts ghp_ tokens', () => expect(validateTokenFormat('ghp_abc123')).toBe(true));
+  it('accepts github_pat_ tokens', () => expect(validateTokenFormat('github_pat_abc123')).toBe(true));
+  it('accepts gho_ tokens', () => expect(validateTokenFormat('gho_abc123')).toBe(true));
+  it('rejects empty string', () => expect(validateTokenFormat('')).toBe(false));
+  it('rejects random string', () => expect(validateTokenFormat('notavalidtoken')).toBe(false));
+  it('rejects partial prefix', () => expect(validateTokenFormat('ghu_')).toBe(false));
+});
+
+describe('addAccounts', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it('adds a valid token and returns added count', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ login: 'alice', name: 'Alice', avatar_url: 'https://example.com/a.png' }),
+    })));
+    const result = await addAccounts(['ghu_abc123XYZ']);
+    expect(result.added).toBe(1);
+    expect(result.failed).toHaveLength(0);
+    expect(getAccounts()).toHaveLength(1);
+    expect(getAccounts()[0].login).toBe('alice');
+  });
+
+  it('skips tokens with invalid format', async () => {
+    const result = await addAccounts(['notvalidtoken']);
+    expect(result.added).toBe(0);
+    expect(result.failed[0]).toMatchObject({ token: 'notvalidtoken', reason: expect.stringContaining('format') });
+  });
+
+  it('reports failure if API returns 401', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
+      ok: false, status: 401,
+    })));
+    const result = await addAccounts(['ghu_badtoken123']);
+    expect(result.added).toBe(0);
+    expect(result.failed[0].reason).toContain('401');
+  });
+
+  it('skips blank tokens silently', async () => {
+    const result = await addAccounts(['', '   ']);
+    expect(result.added).toBe(0);
+    expect(result.failed).toHaveLength(0);
+  });
+
+  it('adds multiple valid tokens', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ login: 'alice', name: '', avatar_url: '' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ login: 'bob', name: '', avatar_url: '' }) }),
+    );
+    const result = await addAccounts(['ghu_token1xxxxx', 'ghu_token2xxxxx']);
+    expect(result.added).toBe(2);
+    expect(getAccounts()).toHaveLength(2);
   });
 });
