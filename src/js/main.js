@@ -6,8 +6,7 @@ import {
   openCalendar, closeCalendar, calNavMonth, calToggleDay, clearCustomDayoffs,
   onWeekendsToggle, onCalWeekendsToggle, setCalView,
 } from './calendar.js';
-import { syncUsage, syncUsageFromInput, updateStatus, renderAllMonths, stepNum } from './uiHelpers.js';
-import { fmt1 } from './uiHelpers.js';
+import { syncUsage, syncUsageFromInput, updateStatus, renderAllMonths, stepNum, fmt1 } from './uiHelpers.js';
 import { state } from './state.js';
 
 // ─── Expose functions to inline HTML event handlers ───────
@@ -103,7 +102,6 @@ export async function fetchRealUsage() {
     console.error('fetchRealUsage:', e);
     _setFetchStatus(`✗ ${e.message}`, 'var(--red)');
   } finally {
-    const btn = document.getElementById('fetchBtn');
     btn.disabled    = false;
     btn.textContent = 'Fetch';
   }
