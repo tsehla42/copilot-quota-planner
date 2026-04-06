@@ -1,3 +1,5 @@
+import { GH_API } from './auth.js';
+
 export const GH_ACCOUNTS_KEY  = 'gh_accounts';
 export const GH_SELECTED_KEY  = 'gh_selected_id';
 
@@ -54,8 +56,6 @@ export function signOutAll() {
   localStorage.removeItem(GH_ACCOUNTS_KEY);
   localStorage.removeItem(GH_SELECTED_KEY);
 }
-
-export const GH_API = 'https://api.github.com';
 
 export function validateTokenFormat(token) {
   return /^(ghp_|github_pat_|gho_|ghu_)[A-Za-z0-9_]{5,}$/.test(token);
