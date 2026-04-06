@@ -425,6 +425,7 @@
     .mb-4  { margin-bottom: 4px; }  .mb-6  { margin-bottom: 6px; }
     .mb-8  { margin-bottom: 8px; }  .mb-10 { margin-bottom: 10px; }
     .mb-14 { margin-bottom: 14px; }  .mb-20 { margin-bottom: 20px; }
+    .mt-0 { margin-top: 0; }  .mt-3  { margin-top: 3px; }
     .mt-4  { margin-top: 4px; }  .mt-6  { margin-top: 6px; }
     .mt-10 { margin-top: 10px; }  .mt-14 { margin-top: 14px; }
     .nowrap   { white-space: nowrap; }
@@ -438,19 +439,21 @@
 /* ─── Accounts Header ──────────────────────────────────── */
 .accounts-header {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px 20px;
-  min-height: 72px;
+  height: 88px;
+  overflow: hidden;
 }
 
 .accounts-static {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   justify-content: center;
   gap: 8px;
   flex: 1;

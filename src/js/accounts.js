@@ -233,18 +233,18 @@ export function renderAccountsHeader() {
   const countLabel = count === 1 ? '1 account connected' : `${count} accounts connected`;
 
   container.innerHTML = `
+    <div class="accounts-dynamic">
+      <div class="account-card-stack">
+        ${peekHtml}
+        ${selected ? cardHtml(selected, 'selected') : ''}
+      </div>
+    </div>
     <div class="accounts-static">
       <div class="accounts-label">${countLabel}</div>
       <div class="accounts-controls">
         ${arrowsHtml}
         <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
         <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">Sign out all</button>
-      </div>
-    </div>
-    <div class="accounts-dynamic">
-      <div class="account-card-stack">
-        ${peekHtml}
-        ${selected ? cardHtml(selected, 'selected') : ''}
       </div>
     </div>`;
 }

@@ -136,11 +136,12 @@ async function addAccounts(tokenArray) {
   }
   return { added: added.length, failed };
 }
-function updateAccountQuota(id, quota) {
+function updateAccountQuota(id, quota, plan = null) {
   const accounts = getAccounts();
   const account = accounts.find((a) => a.id === id);
   if (!account) return;
   account.lastQuota = quota;
+  if (plan) account.plan = plan;
   saveAccounts(accounts);
 }
 function migrateFromLegacy() {
@@ -234,18 +235,18 @@ function renderAccountsHeader() {
   ` : "";
   const countLabel = count === 1 ? "1 account connected" : `${count} accounts connected`;
   container.innerHTML = `
+    <div class="accounts-dynamic">
+      <div class="account-card-stack">
+        ${peekHtml}
+        ${selected ? cardHtml(selected, "selected") : ""}
+      </div>
+    </div>
     <div class="accounts-static">
       <div class="accounts-label">${countLabel}</div>
       <div class="accounts-controls">
         ${arrowsHtml}
         <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
         <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">Sign out all</button>
-      </div>
-    </div>
-    <div class="accounts-dynamic">
-      <div class="account-card-stack">
-        ${peekHtml}
-        ${selected ? cardHtml(selected, "selected") : ""}
       </div>
     </div>`;
 }
@@ -360,6 +361,10 @@ function setCalView(year, month) {
   calViewYear = year;
   calViewMonth = month;
 }
+let _dayoffsByMonth = /* @__PURE__ */ new Map();
+function _monthKey(y, m) {
+  return `${y}-${m}`;
+}
 const CAL_MONTH_NAMES = [
   "January",
   "February",
@@ -378,20 +383,27 @@ const CAL_DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 function getExcludeWeekends() {
   return document.getElementById("excludeWeekendsChk").checked;
 }
-let _savedCalYear = calViewYear;
-let _savedCalMonth = calViewMonth;
 function openCalendar() {
-  _savedCalYear = calViewYear;
-  _savedCalMonth = calViewMonth;
+  _dayoffsByMonth.set(_monthKey(calViewYear, calViewMonth), new Set(calCustomDayoffs));
   document.getElementById("calExcludeWeekendsChk").checked = getExcludeWeekends();
   renderCalendar();
   document.getElementById("calOverlay").classList.add("open");
 }
 function closeCalendar() {
+  _dayoffsByMonth.clear();
   document.getElementById("calOverlay").classList.remove("open");
-  calViewYear = _savedCalYear;
-  calViewMonth = _savedCalMonth;
   syncDayoffsFromCalendar();
+  const daysInViewedMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  const sel = document.getElementById("monthLen");
+  if (sel) {
+    for (let i = 0; i < sel.options.length; i++) {
+      if (parseInt(sel.options[i].value) === daysInViewedMonth) {
+        sel.options[i].selected = true;
+        break;
+      }
+    }
+    sel.dispatchEvent(new Event("change"));
+  }
   window.dispatchEvent(new CustomEvent("calendar:closed"));
 }
 function syncDayoffsFromCalendar() {
@@ -439,6 +451,7 @@ function renderCalGrid() {
   grid.innerHTML = html;
 }
 function calNavMonth(delta) {
+  _dayoffsByMonth.set(_monthKey(calViewYear, calViewMonth), new Set(calCustomDayoffs));
   calViewMonth += delta;
   if (calViewMonth < 0) {
     calViewMonth = 11;
@@ -448,6 +461,12 @@ function calNavMonth(delta) {
     calViewMonth = 0;
     calViewYear++;
   }
+  const saved = _dayoffsByMonth.get(_monthKey(calViewYear, calViewMonth));
+  calCustomDayoffs.clear();
+  if (saved) {
+    for (const iso of saved) calCustomDayoffs.add(iso);
+  }
+  document.getElementById("calDayoffCount").textContent = calCustomDayoffs.size;
   renderCalendar();
 }
 function calToggleDay(iso) {
@@ -622,10 +641,12 @@ function barColor(percentage) {
 }
 function stepNum(id, delta, min, max) {
   const inputEl = document.getElementById(id);
+  const currentDecimals = (String(inputEl.value).split(".")[1] || "").length;
   const rawValue = (parseFloat(inputEl.value) || 0) + delta;
   const decimals = (String(delta).split(".")[1] || "").length;
-  const clampedValue = Math.min(max, Math.max(min, decimals > 0 ? parseFloat(rawValue.toFixed(decimals)) : rawValue));
-  inputEl.value = decimals > 0 ? clampedValue.toFixed(decimals) : clampedValue;
+  const resultDecimals = Math.max(decimals, currentDecimals);
+  const clampedValue = Math.min(max, Math.max(min, resultDecimals > 0 ? parseFloat(rawValue.toFixed(resultDecimals)) : Math.round(rawValue)));
+  inputEl.value = resultDecimals > 0 ? clampedValue.toFixed(resultDecimals) : clampedValue;
   inputEl.dispatchEvent(new Event("input"));
 }
 function syncUsage(val) {
@@ -874,7 +895,6 @@ async function fetchRealUsage() {
         state.quotaRemaining = pi.remaining ?? null;
       }
       if (account) {
-        account.plan = plan || account.plan;
         updateAccountQuota(account.id, {
           pctUsed,
           entitlement: pi.entitlement,
@@ -882,7 +902,7 @@ async function fetchRealUsage() {
           resetDate: data.quota_reset_date,
           unlimited: !!pi.unlimited,
           timestamp: Math.floor(Date.now() / 1e3)
-        });
+        }, plan || null);
         renderAccountsHeader();
       }
       document.getElementById("usageInput").value = pctUsed.toFixed(1);
@@ -905,7 +925,7 @@ async function fetchRealUsage() {
           resetDate: data.quota_reset_date,
           unlimited: false,
           timestamp: Math.floor(Date.now() / 1e3)
-        });
+        }, plan || null);
         renderAccountsHeader();
       }
       document.getElementById("usageInput").value = pctUsed.toFixed(1);
@@ -1296,10 +1316,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .step-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(56,139,253,0.12); border: 1px solid rgba(56,139,253,0.3); display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; color: var(--blue); font-weight: 600; margin-top: 1px; }
     .info-box { font-size: 14px; color: var(--muted); background: var(--tag-bg); border-radius: 6px; padding: 12px 14px; margin-bottom: 16px; line-height: 1.6; }
     .info-box strong { color: var(--text); }
-    details.info-box summary { cursor: pointer; list-style: none; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; user-select: none; }
-    details.info-box summary::-webkit-details-marker { display: none; }
-    details.info-box summary::before { content: '\25B6'; font-size: 9px; color: var(--blue); }
-    details.info-box[open] summary::before { content: '\25BC'; }
     code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; border: 1px solid var(--border); }
     .modal-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
     /* Custom number spinners */
@@ -1308,7 +1324,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .num-wrap input[type="number"]::-webkit-inner-spin-button,
     .num-wrap input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     .num-spin { display: flex; flex-direction: column; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; overflow: hidden; }
-    .num-spin button { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 13px; width: 32px; padding: 0; line-height: 1; transition: background 0.1s, color 0.1s; user-select: none; }
+    .num-spin button { flex: 1; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 13px; width: 32px; padding: 0; line-height: 1; transition: background 0.1s, color 0.1s; user-select: none; }
     .num-spin button:last-child { border-bottom: none; }
     .num-spin button:hover { background: rgba(56,139,253,0.15); color: var(--blue); }
 
@@ -1316,7 +1332,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .num-spin-dual { display: flex; flex-direction: row; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; overflow: hidden; }
     .num-spin-group { display: flex; flex-direction: column; border-left: 1px solid var(--border); }
     .num-spin-group:first-child { border-left: none; }
-    .num-spin-group button { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 11px; width: 36px; padding: 0 2px; line-height: 1; transition: background 0.1s, color 0.1s; user-select: none; }
+    .num-spin-group button { flex: 1; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 11px; width: 36px; padding: 0 2px; line-height: 1; text-align: center; transition: background 0.1s, color 0.1s; user-select: none; }
     .num-spin-group button:last-child { border-bottom: none; }
     .num-spin-group button:hover { background: rgba(56,139,253,0.15); color: var(--blue); }
     .num-spin-group .spin-label { font-size: 11px; color: var(--muted); text-align: center; padding: 2px 0; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); letter-spacing: 0.03em; text-transform: uppercase; }
@@ -1416,6 +1432,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .mb-4  { margin-bottom: 4px; }  .mb-6  { margin-bottom: 6px; }
     .mb-8  { margin-bottom: 8px; }  .mb-10 { margin-bottom: 10px; }
     .mb-14 { margin-bottom: 14px; }  .mb-20 { margin-bottom: 20px; }
+    .mt-0 { margin-top: 0; }  .mt-3  { margin-top: 3px; }
     .mt-4  { margin-top: 4px; }  .mt-6  { margin-top: 6px; }
     .mt-10 { margin-top: 10px; }  .mt-14 { margin-top: 14px; }
     .nowrap   { white-space: nowrap; }
@@ -1429,19 +1446,21 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ─── Accounts Header ──────────────────────────────────── */
 .accounts-header {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px 20px;
-  min-height: 72px;
+  height: 88px;
+  overflow: hidden;
 }
 
 .accounts-static {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   justify-content: center;
   gap: 8px;
   flex: 1;
@@ -1650,7 +1669,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="cal-title" id="calTitle"></span>
         <button onclick="calNavMonth(1)">›</button>
       </div>
-      <p class="cal-instruction">Click on days to mark them as excluded (highlighted in red).</p>
+      <p class="cal-instruction mb-0">Click days to mark them as excluded (highlighted in red). </p>
+      <p class="cal-instruction">Press <kbd>Done</kbd> or <kbd>Esc</kbd> to save.</p>
       <div class="cal-grid" id="calGrid"></div>
       <div class="cal-footer">
         <div class="d-flex ai-center gap-8 flex-wrap">
@@ -1661,7 +1681,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </label>
           <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all manually added day-offs">🗑 Clear day-offs</button>
         </div>
-        <button class="cal-btn-close" onclick="closeCalendar()" title="Done (or press ESC)">Done <span class="fs-11 muted" style="font-weight:400">(or ESC)</span></button>
+        <button class="cal-btn-close" onclick="closeCalendar()">Done</button>
       </div>
     </div>
   </div>
