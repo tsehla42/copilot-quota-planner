@@ -52,6 +52,9 @@ export function calculateBudget(p) {
     : 0;
   const burnRate   = currentDay > 0 ? usage / currentDay : 0;
   const projected  = usage + burnRate * calendarDaysLeft;
+  // Uses calendar days (not working days) for a simple, predictable uniform-burn benchmark.
+  // Note: copilot-instructions.md documents a working-days formula — this intentionally
+  // matches the original index.html behaviour (calendar days, line 1187).
   const perfectTarget = 100 * currentDay / totalDays;
   const vsTarget   = usage - perfectTarget;
 
@@ -69,6 +72,7 @@ export function calculateBudget(p) {
 
   let paceStatus; // 'noUsage' | 'monthComplete' | 'under' | 'onTrack' | 'slightlyOver' | 'over'
   if (calendarDaysLeft === 0) {
+    // 'monthComplete': check remainingPct === 0 to distinguish exhausted vs. leftover
     paceStatus = 'monthComplete';
   } else if (burnRate === 0) {
     paceStatus = 'noUsage';
