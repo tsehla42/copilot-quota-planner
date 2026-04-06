@@ -117,7 +117,7 @@ describe('syncUsage', () => {
 
   it('updates usageInput value', () => {
     syncUsage(75);
-    expect(document.getElementById('usageInput').value).toBe('75');
+    expect(document.getElementById('usageInput').value).toBe('75.0');
   });
 });
 

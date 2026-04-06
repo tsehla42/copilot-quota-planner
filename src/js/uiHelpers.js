@@ -47,8 +47,8 @@ export function stepNum(id, delta, min, max) {
 }
 
 export function syncUsage(val) {
-  val = parseFloat(val);
-  document.getElementById('usageInput').value = val;
+  val = parseFloat(parseFloat(val).toFixed(1));
+  document.getElementById('usageInput').value = fmt1(val);
   document.getElementById('usageDisplay').textContent = fmt1(val) + '%';
   updateStatus();
 }
@@ -195,6 +195,7 @@ export function updateStatus() {
   }
 
   updateRequestsToday(r.idealDailyBudget);
+  updateRemainingRequests(r.remainingPct);
 }
 
 export function updateRequestsToday(idealDay) {
@@ -205,6 +206,21 @@ export function updateRequestsToday(idealDay) {
       <div class="stat">
         <div class="value" style="color:${m.color}">${fmtInt(reqs)}</div>
         <div class="label">${m.label} models / day<br>
+          <span class="muted fs-12">(${m.costPct}% each)</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+export function updateRemainingRequests(remainingPct) {
+  const container = document.getElementById('requestsRemaining');
+  if (!container) return;
+  container.innerHTML = MODELS.filter(m => m.showInToday).map(m => {
+    const reqs = remainingPct / m.costPct;
+    return `
+      <div class="stat">
+        <div class="value" style="color:${m.color}">${fmtInt(reqs)}</div>
+        <div class="label">${m.label} models / month<br>
           <span class="muted fs-12">(${m.costPct}% each)</span>
         </div>
       </div>`;

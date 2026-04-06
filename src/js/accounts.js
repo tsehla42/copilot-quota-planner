@@ -265,18 +265,20 @@ function _tokenModalHtml() {
     <h3>Add GitHub Token(s)</h3>
     <p class="modal-sub">Tokens are stored only in this browser and sent directly to <code>api.github.com</code> — never to any third party.</p>
     <div id="tokenModalErr" class="auth-error"></div>
-    <div class="info-box" style="margin-bottom:16px">
-      <strong>How to get a <code>ghu_</code> token from VS Code</strong><br><br>
-      <div class="step-row"><span class="step-num">1</span><div>Press <code>F1</code> → <strong>Toggle Developer Tools</strong> → Network tab</div></div>
-      <div class="step-row"><span class="step-num">2</span><div>Filter by <code>copilot_internal</code>, tick <strong>Preserve log</strong></div></div>
-      <div class="step-row"><span class="step-num">3</span><div>Send any Copilot Chat message (<code>Ctrl+Alt+I</code>) — a <code>user</code> row appears</div></div>
-      <div class="step-row"><span class="step-num">4</span><div>Click that row → Request Headers → copy value after <code>Authorization: token </code></div></div>
-      <div class="step-row"><span class="step-num">5</span><div>Starts with <code>ghu_</code> — paste it below</div></div>
-    </div>
+    <details class="info-box">
+      <summary>How to get a <code>ghu_</code> token from VS Code</summary>
+      <div style="margin-top:8px">
+        <div class="step-row"><span class="step-num">1</span><div>Press <code>F1</code> → <strong>Toggle Developer Tools</strong> → Network tab</div></div>
+        <div class="step-row"><span class="step-num">2</span><div>Filter by <code>copilot_internal</code>, tick <strong>Preserve log</strong></div></div>
+        <div class="step-row"><span class="step-num">3</span><div>Send any Copilot Chat message (<code>Ctrl+Alt+I</code>) — a <code>user</code> row appears</div></div>
+        <div class="step-row"><span class="step-num">4</span><div>Click that row → Request Headers → copy value after <code>Authorization: token </code></div></div>
+        <div class="step-row"><span class="step-num">5</span><div>Starts with <code>ghu_</code> — paste it below</div></div>
+      </div>
+    </details>
     <label>Token(s)</label>
     <div class="token-fields" id="tokenFields">
       <div class="token-field-row">
-        <input type="password" placeholder="ghx_…" autocomplete="new-password" class="token-input" />
+        <input type="password" placeholder="ghx_…" autocomplete="new-password" class="token-input" onkeydown="if(event.key==='Enter')_submitTokens()" />
       </div>
     </div>
     <button class="btn-add-field" onclick="_addTokenField()">＋ Add another token</button>
@@ -292,7 +294,7 @@ export function _addTokenField() {
   const row = document.createElement('div');
   row.className = 'token-field-row';
   row.innerHTML = `
-    <input type="password" placeholder="ghx_…" autocomplete="new-password" class="token-input" />
+    <input type="password" placeholder="ghx_…" autocomplete="new-password" class="token-input" onkeydown="if(event.key==='Enter')_submitTokens()" />
     <button class="token-field-remove" onclick="this.closest('.token-field-row').remove()" title="Remove field">✕</button>`;
   fields.appendChild(row);
   row.querySelector('input').focus();
