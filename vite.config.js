@@ -4,8 +4,8 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 export default defineConfig({
   root: 'src',
   build: {
-    outDir: '../dist',
-    emptyOutDir: true,
+    outDir: '../',
+    emptyOutDir: false,
     minify: false,
     cssMinify: false,
   },
