@@ -3,6 +3,7 @@ import {
   getAccounts, getSelectedId, saveAccounts, saveSelectedId,
   getSelectedAccount, addAccountObject, removeAccount, signOutAll,
   addAccounts, validateTokenFormat, updateAccountQuota, migrateFromLegacy,
+  getSelectedToken, ghHeaders as accountGhHeaders, getNextAccountId,
 } from '../js/accounts.js';
 
 beforeEach(() => {
@@ -267,5 +268,57 @@ describe('migrateFromLegacy', () => {
     migrateFromLegacy();
     expect(getAccounts()).toEqual([]);
     expect(localStorage.getItem('gh_token')).toBe('ghu_oldtoken123');
+  });
+});
+
+describe('getSelectedToken', () => {
+  it('returns null when no accounts', () => {
+    expect(getSelectedToken()).toBeNull();
+  });
+
+  it('returns token of selected account', () => {
+    const a = { id: 'a1', token: 'ghu_selected', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a]);
+    saveSelectedId('a1');
+    expect(getSelectedToken()).toBe('ghu_selected');
+  });
+});
+
+describe('accountGhHeaders', () => {
+  it('uses selected account token', () => {
+    const a = { id: 'a1', token: 'ghu_mytoken', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a]);
+    saveSelectedId('a1');
+    const h = accountGhHeaders();
+    expect(h['Authorization']).toBe('Bearer ghu_mytoken');
+    expect(h['Accept']).toBe('application/vnd.github+json');
+    expect(h['X-GitHub-Api-Version']).toBe('2022-11-28');
+  });
+});
+
+describe('getNextAccountId', () => {
+  it('returns null when no accounts', () => {
+    expect(getNextAccountId('any', 1)).toBeNull();
+  });
+
+  it('returns next account id in direction +1', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    const b = { id: 'a2', token: 'ghu_y', login: 'bob', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a, b]);
+    expect(getNextAccountId('a1', 1)).toBe('a2');
+  });
+
+  it('wraps around at end (direction +1)', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    const b = { id: 'a2', token: 'ghu_y', login: 'bob', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a, b]);
+    expect(getNextAccountId('a2', 1)).toBe('a1');
+  });
+
+  it('wraps around at start (direction -1)', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    const b = { id: 'a2', token: 'ghu_y', login: 'bob', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a, b]);
+    expect(getNextAccountId('a1', -1)).toBe('a2');
   });
 });

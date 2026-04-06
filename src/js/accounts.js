@@ -126,3 +126,23 @@ export function migrateFromLegacy() {
     localStorage.removeItem('gh_user');
   } catch { /* ignore malformed legacy data */ }
 }
+
+export function getSelectedToken() {
+  return getSelectedAccount()?.token ?? null;
+}
+
+export function ghHeaders() {
+  return {
+    'Authorization': `Bearer ${getSelectedToken()}`,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+
+export function getNextAccountId(currentId, direction) {
+  const accounts = getAccounts();
+  if (!accounts.length) return null;
+  const idx = accounts.findIndex(a => a.id === currentId);
+  const nextIdx = (idx + direction + accounts.length) % accounts.length;
+  return accounts[nextIdx].id;
+}
