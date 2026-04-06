@@ -143,6 +143,7 @@ export function getNextAccountId(currentId, direction) {
   const accounts = getAccounts();
   if (!accounts.length) return null;
   const idx = accounts.findIndex(a => a.id === currentId);
+  if (idx === -1) return null;
   const nextIdx = (idx + direction + accounts.length) % accounts.length;
   return accounts[nextIdx].id;
 }

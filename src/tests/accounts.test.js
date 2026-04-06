@@ -321,4 +321,10 @@ describe('getNextAccountId', () => {
     saveAccounts([a, b]);
     expect(getNextAccountId('a1', -1)).toBe('a2');
   });
+
+  it('returns null when currentId is not found in a non-empty list', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a]);
+    expect(getNextAccountId('MISSING_ID', 1)).toBeNull();
+  });
 });
