@@ -260,4 +260,12 @@ describe('migrateFromLegacy', () => {
     migrateFromLegacy();
     expect(getAccounts()).toEqual([]);
   });
+
+  it('preserves legacy keys when gh_user is malformed JSON', () => {
+    localStorage.setItem('gh_token', 'ghu_oldtoken123');
+    localStorage.setItem('gh_user', 'NOT_JSON{{{');
+    migrateFromLegacy();
+    expect(getAccounts()).toEqual([]);
+    expect(localStorage.getItem('gh_token')).toBe('ghu_oldtoken123');
+  });
 });
