@@ -7,6 +7,7 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     minify: false,
+    cssMinify: false,
   },
   plugins: [viteSingleFile()],
 });
