@@ -8,6 +8,10 @@ export function setCalView(year, month) {
   calViewMonth = month;
 }
 
+// Per-session Map for month-scoped day-offs: key = "YYYY-M"
+let _dayoffsByMonth = new Map();
+function _monthKey(y, m) { return `${y}-${m}`; }
+
 const CAL_MONTH_NAMES = ['January','February','March','April','May','June',
   'July','August','September','October','November','December'];
 const CAL_DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -38,12 +42,15 @@ export function countEffectiveDayoffs() {
 }
 
 export function openCalendar() {
+  // Snapshot the current active day-offs into the per-session map for the current view month
+  _dayoffsByMonth.set(_monthKey(calViewYear, calViewMonth), new Set(calCustomDayoffs));
   document.getElementById('calExcludeWeekendsChk').checked = getExcludeWeekends();
   renderCalendar();
   document.getElementById('calOverlay').classList.add('open');
 }
 
 export function closeCalendar() {
+  _dayoffsByMonth.clear(); // discard per-session month snapshots
   document.getElementById('calOverlay').classList.remove('open');
   syncDayoffsFromCalendar();
   // Sync the monthLen select to the currently viewed month
@@ -117,9 +124,19 @@ export function renderCalGrid() {
 }
 
 export function calNavMonth(delta) {
+  // Save current month's day-offs before navigating
+  _dayoffsByMonth.set(_monthKey(calViewYear, calViewMonth), new Set(calCustomDayoffs));
+
   calViewMonth += delta;
   if (calViewMonth < 0)  { calViewMonth = 11; calViewYear--; }
   if (calViewMonth > 11) { calViewMonth = 0;  calViewYear++; }
+
+  // Load the target month's day-offs (or start empty)
+  const saved = _dayoffsByMonth.get(_monthKey(calViewYear, calViewMonth));
+  calCustomDayoffs.clear();
+  if (saved) { for (const iso of saved) calCustomDayoffs.add(iso); }
+  document.getElementById('calDayoffCount').textContent = calCustomDayoffs.size;
+
   renderCalendar();
 }
 

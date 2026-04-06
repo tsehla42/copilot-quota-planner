@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   calCustomDayoffs, calToggleDay, clearCustomDayoffs,
   countWeekendsInMonth, countEffectiveDayoffs,
-  setCalView, calNavMonth, closeCalendar,
+  setCalView, calNavMonth, closeCalendar, openCalendar,
 } from '../js/calendar.js';
 
 // DOM setup for functions that read checkboxes
@@ -113,5 +113,41 @@ describe('closeCalendar syncs monthLen', () => {
     calNavMonth(1); // navigate to May
     closeCalendar();
     expect(document.getElementById('monthLen').value).toBe('31');
+  });
+});
+
+describe('per-month day-off tracking', () => {
+  beforeEach(() => {
+    setupDom(false);
+    setCalView(2026, 3); // April
+    clearCustomDayoffs();
+  });
+
+  it('navigating to next month shows empty day-offs', () => {
+    calToggleDay('2026-04-10');
+    openCalendar();
+    calNavMonth(1); // go to May
+    expect(calCustomDayoffs.has('2026-04-10')).toBe(false);
+    expect(calCustomDayoffs.size).toBe(0);
+  });
+
+  it('navigating back to original month restores day-offs', () => {
+    calToggleDay('2026-04-10');
+    openCalendar();
+    calNavMonth(1);  // April → May
+    calNavMonth(-1); // May → April
+    expect(calCustomDayoffs.has('2026-04-10')).toBe(true);
+  });
+
+  it('closing on different month leaves day-offs cleared for original month next open', () => {
+    calToggleDay('2026-04-10');
+    openCalendar();
+    calNavMonth(1); // navigate to May
+    closeCalendar(); // close on May — April's days are gone
+    // Re-open on May (calViewMonth is now May=4)
+    openCalendar();
+    calNavMonth(-1); // navigate back to April
+    // April's dayoffs from before are gone (map was cleared on closeCalendar)
+    expect(calCustomDayoffs.has('2026-04-10')).toBe(false);
   });
 });
