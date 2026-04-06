@@ -127,6 +127,24 @@ describe('removeAccount', () => {
     expect(getAccounts()).toEqual([]);
     expect(getSelectedId()).toBeNull();
   });
+
+  it('does not change selection when removing a non-selected account', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    const b = { id: 'a2', token: 'ghu_y', login: 'bob', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a, b]);
+    saveSelectedId('a2');
+    removeAccount('a1');
+    expect(getSelectedId()).toBe('a2');
+  });
+
+  it('falls back to previous account when last-position selected account is removed', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    const b = { id: 'a2', token: 'ghu_y', login: 'bob', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a, b]);
+    saveSelectedId('a2');
+    removeAccount('a2');
+    expect(getSelectedId()).toBe('a1');
+  });
 });
 
 describe('signOutAll', () => {
