@@ -37,12 +37,14 @@ export function barColor(percentage) {
 
 export function stepNum(id, delta, min, max) {
   const inputEl = document.getElementById(id);
+  const currentDecimals = (String(inputEl.value).split('.')[1] || '').length;
   const rawValue = (parseFloat(inputEl.value) || 0) + delta;
   const decimals = (String(delta).split('.')[1] || '').length;
-  const clampedValue = Math.min(max, Math.max(min, decimals > 0
-    ? parseFloat(rawValue.toFixed(decimals))
-    : rawValue));
-  inputEl.value = decimals > 0 ? clampedValue.toFixed(decimals) : clampedValue;
+  const resultDecimals = Math.max(decimals, currentDecimals);
+  const clampedValue = Math.min(max, Math.max(min, resultDecimals > 0
+    ? parseFloat(rawValue.toFixed(resultDecimals))
+    : Math.round(rawValue)));
+  inputEl.value = resultDecimals > 0 ? clampedValue.toFixed(resultDecimals) : clampedValue;
   inputEl.dispatchEvent(new Event('input'));
 }
 

@@ -75,6 +75,24 @@ describe('stepNum', () => {
     stepNum('testInput', 0.1, 0, 100);
     expect(document.getElementById('testInput').value).toBe('5.1');
   });
+
+  it('avoids float imprecision when delta=1 and value has decimal', () => {
+    document.getElementById('testInput').value = '0.8';
+    stepNum('testInput', 1, 0, 100);
+    expect(document.getElementById('testInput').value).toBe('1.8');
+  });
+
+  it('avoids float imprecision when delta=-1 and value has decimal', () => {
+    document.getElementById('testInput').value = '2.8';
+    stepNum('testInput', -1, 0, 100);
+    expect(document.getElementById('testInput').value).toBe('1.8');
+  });
+
+  it('preserves integer result when both value and delta are integers', () => {
+    document.getElementById('testInput').value = '6';
+    stepNum('testInput', 1, 0, 10);
+    expect(document.getElementById('testInput').value).toBe('7');
+  });
 });
 
 // Minimal DOM fixture for syncUsage/syncUsageFromInput
