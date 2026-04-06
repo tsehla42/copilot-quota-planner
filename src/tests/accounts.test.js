@@ -234,6 +234,28 @@ describe('updateAccountQuota', () => {
     updateAccountQuota('MISSING', { pctUsed: 99 });
     expect(getAccounts()[0].lastQuota).toBeNull();
   });
+
+  it('saves plan to account when provided', () => {
+    const account = {
+      id: 'acc-test-1', token: 'ghu_test', login: 'testuser',
+      name: '', avatar_url: '', plan: null, lastQuota: null,
+    };
+    addAccountObject(account);
+    updateAccountQuota('acc-test-1', { pctUsed: 50 }, 'copilot_business');
+    const saved = getAccounts().find(a => a.id === 'acc-test-1');
+    expect(saved.plan).toBe('copilot_business');
+  });
+
+  it('does not overwrite existing plan when plan param is null', () => {
+    const account = {
+      id: 'acc-test-2', token: 'ghu_test2', login: 'user2',
+      name: '', avatar_url: '', plan: 'copilot_enterprise', lastQuota: null,
+    };
+    addAccountObject(account);
+    updateAccountQuota('acc-test-2', { pctUsed: 30 }, null);
+    const saved = getAccounts().find(a => a.id === 'acc-test-2');
+    expect(saved.plan).toBe('copilot_enterprise');
+  });
 });
 
 describe('migrateFromLegacy', () => {

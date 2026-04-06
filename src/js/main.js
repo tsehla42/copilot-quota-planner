@@ -79,7 +79,6 @@ export async function fetchRealUsage() {
         state.quotaRemaining   = pi.remaining ?? null;
       }
       if (account) {
-        account.plan = plan || account.plan;
         updateAccountQuota(account.id, {
           pctUsed,
           entitlement: pi.entitlement,
@@ -87,7 +86,7 @@ export async function fetchRealUsage() {
           resetDate: data.quota_reset_date,
           unlimited: !!pi.unlimited,
           timestamp: Math.floor(Date.now() / 1000),
-        });
+        }, plan || null);
         renderAccountsHeader();
       }
       document.getElementById('usageInput').value  = pctUsed.toFixed(1);
@@ -107,7 +106,7 @@ export async function fetchRealUsage() {
           pctUsed, entitlement: chat.entitlement, remaining: chat.remaining,
           resetDate: data.quota_reset_date, unlimited: false,
           timestamp: Math.floor(Date.now() / 1000),
-        });
+        }, plan || null);
         renderAccountsHeader();
       }
       document.getElementById('usageInput').value  = pctUsed.toFixed(1);

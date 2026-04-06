@@ -97,11 +97,12 @@ export async function addAccounts(tokenArray) {
   return { added: added.length, failed };
 }
 
-export function updateAccountQuota(id, quota) {
+export function updateAccountQuota(id, quota, plan = null) {
   const accounts = getAccounts();
   const account = accounts.find(a => a.id === id);
   if (!account) return;
   account.lastQuota = quota;
+  if (plan) account.plan = plan;
   saveAccounts(accounts);
 }
 
