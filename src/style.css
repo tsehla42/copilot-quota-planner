@@ -325,7 +325,7 @@
     .num-spin-dual { display: flex; flex-direction: row; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; overflow: hidden; }
     .num-spin-group { display: flex; flex-direction: column; border-left: 1px solid var(--border); }
     .num-spin-group:first-child { border-left: none; }
-    .num-spin-group button { flex: 1; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 11px; width: 36px; padding: 0 2px; line-height: 1; transition: background 0.1s, color 0.1s; user-select: none; }
+    .num-spin-group button { flex: 1; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 11px; width: 36px; padding: 0 2px; line-height: 1; text-align: center; transition: background 0.1s, color 0.1s; user-select: none; }
     .num-spin-group button:last-child { border-bottom: none; }
     .num-spin-group button:hover { background: rgba(56,139,253,0.15); color: var(--blue); }
     .num-spin-group .spin-label { font-size: 11px; color: var(--muted); text-align: center; padding: 2px 0; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); letter-spacing: 0.03em; text-transform: uppercase; }
