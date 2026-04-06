@@ -1,7 +1,11 @@
 import {
-  getToken, renderAuthCard, openAuthModal, closeAuthModal,
-  signOut, _savePAT, _setFetchStatus, ghHeaders, escHtml, GH_API,
-} from './auth.js';
+  getSelectedToken, ghHeaders, renderAccountsHeader,
+  openAccountsModal, closeAccountsModal, signOutAllAndRender,
+  _addTokenField, _submitTokens, navigateAccount, removeAccountAndRender,
+  migrateFromLegacy, updateAccountQuota, getSelectedAccount, showToast,
+  getAccounts, saveSelectedId,
+} from './accounts.js';
+import { escHtml, GH_API, _setFetchStatus } from './auth.js';
 import {
   openCalendar, closeCalendar, calNavMonth, calToggleDay, clearCustomDayoffs,
   onWeekendsToggle, onCalWeekendsToggle, setCalView,
@@ -10,12 +14,12 @@ import { syncUsage, syncUsageFromInput, updateStatus, renderAllMonths, stepNum, 
 import { state } from './state.js';
 
 // ─── Expose functions to inline HTML event handlers ───────
-// Vite bundles ES modules, so onclick="fn()" attrs need functions on window.
 Object.assign(window, {
   syncUsage, syncUsageFromInput, updateStatus, stepNum,
   openCalendar, closeCalendar, calNavMonth, calToggleDay, clearCustomDayoffs,
   onWeekendsToggle, onCalWeekendsToggle,
-  openAuthModal, closeAuthModal, signOut, _savePAT,
+  openAccountsModal, closeAccountsModal, signOutAllAndRender,
+  _addTokenField, _submitTokens, navigateAccount, removeAccountAndRender,
   fetchRealUsage, onMonthLenChange,
 });
 
@@ -24,10 +28,10 @@ const LONG_MONTHS = ['January','February','March','April','May','June',
   'July','August','September','October','November','December'];
 
 export async function fetchRealUsage() {
-  const token = getToken();
+  const token = getSelectedToken();
   if (!token) {
     _setFetchStatus('No token — click "Connect token" above', 'var(--muted)');
-    openAuthModal();
+    openAccountsModal();
     return;
   }
 
@@ -36,6 +40,8 @@ export async function fetchRealUsage() {
   btn.textContent = 'Fetching…';
   _setFetchStatus('⏳ Fetching quota from GitHub…', 'var(--blue)');
 
+  const account = getSelectedAccount();
+
   try {
     const res = await fetch(`${GH_API}/copilot_internal/user`, {
       headers: { ...ghHeaders(), 'X-GitHub-Api-Version': '2025-04-01' },
@@ -43,17 +49,17 @@ export async function fetchRealUsage() {
 
     if (res.status === 404 || res.status === 403) {
       const userRes = await fetch(`${GH_API}/user`, { headers: ghHeaders() });
-      if (!userRes.ok) throw new Error(`Token invalid (${userRes.status}). Sign out and reconnect.`);
+      if (!userRes.ok) throw new Error(`Token invalid (${userRes.status}). Remove this account and reconnect.`);
       const fallbackUser = await userRes.json();
       _setFetchStatus(
-        `✓ Token valid for @${escHtml(fallbackUser.login)} · Real quota % needs a ghu_ OAuth token — see "Connect token" ↑ for step-by-step instructions`,
+        `✓ Token valid for @${escHtml(fallbackUser.login)} · Real quota % needs a ghu_ OAuth token`,
         'var(--blue)',
       );
       return;
     }
 
     if (!res.ok) {
-      if (res.status === 401) throw new Error('Token invalid or expired (401). Sign out and reconnect.');
+      if (res.status === 401) throw new Error('Token invalid or expired (401). Remove this account and reconnect.');
       throw new Error(`copilot_internal/user returned ${res.status}`);
     }
 
@@ -72,6 +78,18 @@ export async function fetchRealUsage() {
         state.quotaEntitlement = pi.entitlement;
         state.quotaRemaining   = pi.remaining ?? null;
       }
+      if (account) {
+        account.plan = plan || account.plan;
+        updateAccountQuota(account.id, {
+          pctUsed,
+          entitlement: pi.entitlement,
+          remaining: pi.remaining,
+          resetDate: data.quota_reset_date,
+          unlimited: !!pi.unlimited,
+          timestamp: Math.floor(Date.now() / 1000),
+        });
+        renderAccountsHeader();
+      }
       document.getElementById('usageInput').value  = pctUsed.toFixed(1);
       document.getElementById('usageSlider').value = pctUsed;
       syncUsage(pctUsed);
@@ -84,6 +102,14 @@ export async function fetchRealUsage() {
     } else if (snapshots?.chat) {
       const chat    = snapshots.chat;
       const pctUsed = 100 - chat.percent_remaining;
+      if (account) {
+        updateAccountQuota(account.id, {
+          pctUsed, entitlement: chat.entitlement, remaining: chat.remaining,
+          resetDate: data.quota_reset_date, unlimited: false,
+          timestamp: Math.floor(Date.now() / 1000),
+        });
+        renderAccountsHeader();
+      }
       document.getElementById('usageInput').value  = pctUsed.toFixed(1);
       document.getElementById('usageSlider').value = pctUsed;
       syncUsage(pctUsed);
@@ -107,11 +133,6 @@ export async function fetchRealUsage() {
   }
 }
 
-async function autoFetchOnLoad() {
-  if (!getToken()) return;
-  try { await fetchRealUsage(); } catch (_) { /* silent */ }
-}
-
 function onMonthLenChange() {
   updateStatus();
 }
@@ -130,11 +151,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (parseInt(sel.options[i].value) === daysInCurMonth) { sel.options[i].selected = true; break; }
   }
 
+  // Migrate legacy gh_token / gh_user keys if present
+  migrateFromLegacy();
+
   // Close popups on Escape
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (document.getElementById('calOverlay').classList.contains('open')) closeCalendar();
-    if (document.getElementById('authModal').classList.contains('open')) closeAuthModal();
+    if (document.getElementById('authModal').classList.contains('open')) closeAccountsModal();
   });
 
   // React to calendar changes
@@ -142,11 +166,52 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('calendar:dayoff-changed', updateStatus);
   window.addEventListener('calendar:weekends-changed', updateStatus);
 
-  // After auth connects, fetch quota
-  window.addEventListener('auth:connected', fetchRealUsage);
+  // Switch account: load cached quota into calculator, then refresh in background
+  window.addEventListener('account:switch-requested', async (e) => {
+    const { id, previousId } = e.detail;
+    const accounts = getAccounts();
+    const target = accounts.find(a => a.id === id);
+    if (!target) return;
+
+    // Update selection
+    saveSelectedId(id);
+    renderAccountsHeader();
+
+    // Load cached quota immediately
+    if (target.lastQuota) {
+      const q = target.lastQuota;
+      state.quotaEntitlement = q.entitlement ?? state.quotaEntitlement;
+      state.quotaRemaining   = q.remaining ?? null;
+      document.getElementById('usageInput').value  = q.pctUsed.toFixed(1);
+      document.getElementById('usageSlider').value = q.pctUsed;
+      syncUsage(q.pctUsed);
+    }
+
+    // Fetch fresh in background
+    try {
+      await fetchRealUsage();
+    } catch (err) {
+      // revert to previous account on failure
+      saveSelectedId(previousId);
+      renderAccountsHeader();
+      showToast(`Failed to fetch for @${escHtml(target.login)} — staying on previous account`, true);
+    }
+  });
+
+  // After adding new accounts, fetch for the newly selected one
+  window.addEventListener('account:switched', fetchRealUsage);
+
+  // After sign out, reset calculator to defaults
+  window.addEventListener('account:signed-out', () => {
+    state.quotaEntitlement = 300;
+    state.quotaRemaining   = null;
+    _setFetchStatus('', '');
+    updateStatus();
+  });
 
   renderAllMonths();
   updateStatus();
-  renderAuthCard();
-  autoFetchOnLoad();
+  renderAccountsHeader();
+  // Auto-fetch on load (silent) if token saved
+  fetchRealUsage().catch(() => {});
 });
