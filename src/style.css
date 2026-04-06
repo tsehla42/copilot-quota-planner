@@ -434,3 +434,211 @@
     .fs-18    { font-size: 18px; }
     .avatar { width:32px; height:32px; border-radius:50%; border:2px solid var(--border); display:block; }
     .proj-value { font-size: 22px; font-weight: 700; line-height: 1.5; }
+
+/* ─── Accounts Header ──────────────────────────────────── */
+.accounts-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  min-height: 72px;
+}
+
+.accounts-static {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.accounts-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.accounts-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-arrow {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s;
+}
+.nav-arrow:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ─── Account Card Stack ────────────────────────────────── */
+.accounts-dynamic {
+  position: relative;
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.account-card-stack {
+  position: relative;
+  height: 56px;
+}
+
+.account-card {
+  position: absolute;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.account-card.selected {
+  position: relative;
+  z-index: 3;
+  opacity: 1;
+  transform: translateY(0);
+  background: var(--tag-bg);
+  border-color: var(--border);
+}
+
+.account-card.peek-1 {
+  z-index: 2;
+  opacity: 0.45;
+  transform: translateY(6px) scale(0.97);
+  pointer-events: none;
+}
+
+.account-card.peek-2 {
+  z-index: 1;
+  opacity: 0.22;
+  transform: translateY(11px) scale(0.94);
+  pointer-events: none;
+}
+
+.account-card-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.account-card-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.account-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-card-login {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-card-plan {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-card-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.account-card:hover .account-card-remove,
+.account-card-remove:focus { opacity: 1; }
+.account-card-remove:hover { color: var(--red); }
+
+/* ─── Token Modal multi-field ───────────────────────────── */
+.token-fields { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.token-field-row { display: flex; gap: 6px; align-items: center; }
+.token-field-row input { flex: 1; }
+.token-field-remove {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+.token-field-remove:hover { border-color: var(--red); color: var(--red); }
+
+.btn-add-field {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 6px 12px;
+  width: 100%;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-add-field:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ─── Toast notification ────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  z-index: 9999;
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  max-width: 420px;
+  text-align: center;
+  pointer-events: none;
+}
+.toast.toast-visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.toast.toast-error { border-color: rgba(218,54,51,0.5); color: var(--red); }
+
+@media (max-width: 640px) {
+  .accounts-header { flex-direction: column; }
+  .accounts-dynamic { width: 100%; }
+}
