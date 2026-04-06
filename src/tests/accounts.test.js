@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getAccounts, getSelectedId, saveAccounts, saveSelectedId,
   getSelectedAccount, addAccountObject, removeAccount, signOutAll,
-  addAccounts, validateTokenFormat,
+  addAccounts, validateTokenFormat, updateAccountQuota, migrateFromLegacy,
 } from '../js/accounts.js';
 
 beforeEach(() => {
@@ -215,5 +215,49 @@ describe('addAccounts', () => {
     const result = await addAccounts(['ghu_token1xxxxx', 'ghu_token2xxxxx']);
     expect(result.added).toBe(2);
     expect(getAccounts()).toHaveLength(2);
+  });
+});
+
+describe('updateAccountQuota', () => {
+  it('saves lastQuota on the matching account', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: 'business', lastQuota: null };
+    saveAccounts([a]);
+    const quota = { pctUsed: 42, entitlement: 300, remaining: 174, resetDate: '2026-05-01', unlimited: false, timestamp: 1000 };
+    updateAccountQuota('a1', quota);
+    expect(getAccounts()[0].lastQuota).toEqual(quota);
+  });
+
+  it('does nothing for unknown id', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a]);
+    updateAccountQuota('MISSING', { pctUsed: 99 });
+    expect(getAccounts()[0].lastQuota).toBeNull();
+  });
+});
+
+describe('migrateFromLegacy', () => {
+  it('migrates old gh_token and gh_user into gh_accounts', () => {
+    localStorage.setItem('gh_token', 'ghu_oldtoken123');
+    localStorage.setItem('gh_user', JSON.stringify({ login: 'alice', name: 'Alice', avatar_url: 'https://example.com/a.png' }));
+    migrateFromLegacy();
+    const accounts = getAccounts();
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0].token).toBe('ghu_oldtoken123');
+    expect(accounts[0].login).toBe('alice');
+    expect(localStorage.getItem('gh_token')).toBeNull();
+    expect(localStorage.getItem('gh_user')).toBeNull();
+  });
+
+  it('does nothing if gh_accounts already exists', () => {
+    const a = { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
+    saveAccounts([a]);
+    localStorage.setItem('gh_token', 'ghu_old');
+    migrateFromLegacy();
+    expect(getAccounts()).toHaveLength(1); // not duplicated
+  });
+
+  it('does nothing if no legacy keys', () => {
+    migrateFromLegacy();
+    expect(getAccounts()).toEqual([]);
   });
 });

@@ -96,3 +96,33 @@ export async function addAccounts(tokenArray) {
 
   return { added: added.length, failed };
 }
+
+export function updateAccountQuota(id, quota) {
+  const accounts = getAccounts();
+  const account = accounts.find(a => a.id === id);
+  if (!account) return;
+  account.lastQuota = quota;
+  saveAccounts(accounts);
+}
+
+export function migrateFromLegacy() {
+  // Only migrate if gh_accounts doesn't exist yet
+  if (localStorage.getItem(GH_ACCOUNTS_KEY)) return;
+  const token = localStorage.getItem('gh_token');
+  const userJson = localStorage.getItem('gh_user');
+  if (!token || !userJson) return;
+  try {
+    const user = JSON.parse(userJson);
+    addAccountObject({
+      id: `acc-${Date.now()}-legacy`,
+      token,
+      login: user.login || '',
+      name: user.name || '',
+      avatar_url: user.avatar_url || '',
+      plan: null,
+      lastQuota: null,
+    });
+    localStorage.removeItem('gh_token');
+    localStorage.removeItem('gh_user');
+  } catch { /* ignore malformed legacy data */ }
+}
