@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Switch account: load cached quota into calculator, then refresh in background
   window.addEventListener('account:switch-requested', async (e) => {
-    const { id, previousId } = e.detail;
+    const { id } = e.detail;
     const accounts = getAccounts();
     const target = accounts.find(a => a.id === id);
     if (!target) return;
@@ -187,15 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
       syncUsage(q.pctUsed);
     }
 
-    // Fetch fresh in background
-    try {
-      await fetchRealUsage();
-    } catch (err) {
-      // revert to previous account on failure
-      saveSelectedId(previousId);
-      renderAccountsHeader();
-      showToast(`Failed to fetch for @${escHtml(target.login)} — staying on previous account`, true);
-    }
+    // Fetch fresh in background (errors are displayed via _setFetchStatus in fetchRealUsage)
+    await fetchRealUsage().catch(() => {});
   });
 
   // After adding new accounts, fetch for the newly selected one
