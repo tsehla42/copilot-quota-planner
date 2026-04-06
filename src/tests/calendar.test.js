@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   calCustomDayoffs, calToggleDay, clearCustomDayoffs,
   countWeekendsInMonth, countEffectiveDayoffs,
-  setCalView,
+  setCalView, calNavMonth, closeCalendar,
 } from '../js/calendar.js';
 
 // DOM setup for functions that read checkboxes
@@ -13,6 +13,13 @@ function setupDom(excludeWeekends = false) {
     <span id="calDayoffCount">0</span>
     <div id="calGrid"></div>
     <span id="calTitle"></span>
+    <div id="calOverlay" class="cal-overlay"></div>
+    <select id="monthLen">
+      <option value="28">28 days</option>
+      <option value="29">29 days</option>
+      <option value="30">30 days</option>
+      <option value="31" selected>31 days</option>
+    </select>
   `;
 }
 
@@ -87,5 +94,24 @@ describe('countEffectiveDayoffs', () => {
 
   it('returns 0 when no dayoffs set', () => {
     expect(countEffectiveDayoffs()).toBe(0);
+  });
+});
+
+describe('closeCalendar syncs monthLen', () => {
+  beforeEach(() => {
+    setupDom(false);
+    setCalView(2026, 3); // April = 30 days
+    clearCustomDayoffs();
+  });
+
+  it('updates monthLen to 30 when calendar closes on April', () => {
+    closeCalendar();
+    expect(document.getElementById('monthLen').value).toBe('30');
+  });
+
+  it('updates monthLen to 31 when calendar closes on May', () => {
+    calNavMonth(1); // navigate to May
+    closeCalendar();
+    expect(document.getElementById('monthLen').value).toBe('31');
   });
 });

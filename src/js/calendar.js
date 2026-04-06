@@ -46,6 +46,18 @@ export function openCalendar() {
 export function closeCalendar() {
   document.getElementById('calOverlay').classList.remove('open');
   syncDayoffsFromCalendar();
+  // Sync the monthLen select to the currently viewed month
+  const daysInViewedMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  const sel = document.getElementById('monthLen');
+  if (sel) {
+    for (let i = 0; i < sel.options.length; i++) {
+      if (parseInt(sel.options[i].value) === daysInViewedMonth) {
+        sel.options[i].selected = true;
+        break;
+      }
+    }
+    sel.dispatchEvent(new Event('change'));
+  }
   window.dispatchEvent(new CustomEvent('calendar:closed'));
 }
 
