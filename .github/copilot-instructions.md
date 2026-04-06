@@ -58,8 +58,8 @@ Just open `index.html` in a browser — no server, no install, no build.
 ### Auth Storage (localStorage)
 | Key | Value |
 |-----|-------|
-| `gh_token` | The `ghu_` or `ghp_` token |
-| `gh_user` | `{ login, name, avatar_url }` JSON |
+| `gh_accounts` | JSON array of `{ id, token, login, name, avatar_url, plan, lastQuota }` account objects |
+| `gh_selected_id` | String ID of the currently selected account |
 
 ## Important Patterns & Conventions
 
@@ -90,7 +90,7 @@ renderAuthCard()      // renders connected/disconnected states in #authCard
 openAuthModal()       // opens PAT input modal
 _savePAT()            // validates format, calls _verifyAndSave(token)
 _verifyAndSave(token) // GET /user to confirm valid, stores in localStorage
-signOut()             // clears gh_token, gh_user from localStorage
+signOut()             // removes the current account from gh_accounts; updates gh_selected_id
 
 // Core fetch
 fetchRealUsage()      // tries copilot_internal/user → falls back to /user for ghp_ tokens
@@ -148,3 +148,24 @@ This accounts for excluded weekends and calendar day-offs. `workingDaysElapsed` 
 | Day shows yesterday | Page was loaded on the previous day — refresh |
 | Perfect pace target doesn't change with days-off | Expected: it's working-days-aware, so toggling weekends/calendar offs does shift it |
 | XSS via user data | All user-supplied strings rendered via `escHtml()` before innerHTML injection |
+
+
+## Clarifying Questions — VS Code Chat Override
+
+> **User instruction — takes highest priority over all superpowers skills** (per Instruction Priority in `using-superpowers`).
+
+This project runs in **VS Code Copilot Chat**. The brainstorming skill says "only one question per message" — **that rule does NOT apply here**.
+
+**ALWAYS batch ALL clarifying questions into a single `vscode_askQuestions` tool call.** Never ask a question in plain text and wait for a reply.
+
+You may call `vscode_askQuestions` multiple times in one task if new questions arise — that's fine and expected.
+
+---
+
+## Never "Breaking Questions"
+❌ Do NOT:
+- Stop mid-task and ask a question as plain text, then wait for a new message
+- Wait for a fresh prompt to continue reasoning
+- Let the brainstorming skill's "one question per message" rule cause request interruptions
+
+This consumes extra requests and breaks the agent's thought process.
