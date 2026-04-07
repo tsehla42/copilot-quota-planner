@@ -186,17 +186,27 @@ export function updateStatus() {
   // Projection
   const projEl    = document.getElementById('projectionLine');
   const projColor = r.projected > 100 ? 'var(--red)' : r.projected > 90 ? 'var(--yellow)' : 'var(--accent-hover)';
+
+  // Pre-compute exhaustion label: "~day N (M days remaining)"
+  const exhaustionLabel = (() => {
+    if (r.burnRate <= 0) return '?';
+    const exhaustDay = Math.round(currentDay + (100 - usage) / r.burnRate);
+    const daysAfter = Math.max(0, totalDays - exhaustDay);
+    const afterText = daysAfter > 0 ? ` (${daysAfter} days remaining)` : '';
+    return `~day ${exhaustDay}${afterText}`;
+  })();
+
   if (requestMode) {
     const projUsedReqs = Math.min(entitlement, Math.round(r.projected / 100 * entitlement));
     if (r.projected > 100) {
-      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${r.burnRate > 0 ? Math.round(currentDay + (100 - usage) / r.burnRate) : '?'}</span>`;
+      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ⚠ quota exhausted ${exhaustionLabel}</span>`;
     } else {
       projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ${entitlement - projUsedReqs} req leftover</span>`;
     }
   } else {
     const projPct = fmt1(Math.min(r.projected, 100));
     if (r.projected > 100) {
-      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${r.burnRate > 0 ? Math.round(currentDay + (100 - usage) / r.burnRate) : '?'}</span>`;
+      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ⚠ quota exhausted ${exhaustionLabel}</span>`;
     } else {
       projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ${fmt1(100 - r.projected)}% leftover</span>`;
     }
