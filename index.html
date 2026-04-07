@@ -212,14 +212,16 @@ function renderAccountsHeader() {
     accounts[(selectedIdx + 1) % count],
     count > 2 ? accounts[(selectedIdx + 2) % count] : null
   ].filter(Boolean) : [];
-  function cardHtml(account, role) {
+  const CARD_WIDTH = 280;
+  const PEEK_OFFSET = 40;
+  function cardHtml(account, role, leftPx) {
     const removeBtn = role === "selected" && multi ? `
       <button class="account-card-remove" onclick="removeAccountAndRender('${escHtml(account.id)}')" title="Remove account" aria-label="Remove ${escHtml(account.login)}">✕</button>
     ` : "";
     const planLabel = account.plan ? escHtml(account.plan) + " plan" : "plan unknown";
     const avatarEl = account.avatar_url ? `<img src="${escHtml(account.avatar_url)}" alt="" class="account-card-avatar" loading="lazy" />` : `<div class="account-card-avatar-placeholder"></div>`;
     return `
-      <div class="account-card ${role}">
+      <div class="account-card ${role}" style="left:${leftPx}px">
         ${avatarEl}
         <div class="account-card-info">
           <div class="account-card-login">@${escHtml(account.login)}</div>
@@ -228,17 +230,24 @@ function renderAccountsHeader() {
         ${removeBtn}
       </div>`;
   }
-  const peekHtml = peekAccounts.map((a, i) => cardHtml(a, i === 0 ? "peek-1" : "peek-2")).join("");
+  const peekCount = peekAccounts.length;
+  const stackWidth = CARD_WIDTH + peekCount * PEEK_OFFSET;
+  const peekHtml = peekAccounts.map((a, i) => {
+    const role = i === 0 ? "peek-1" : "peek-2";
+    const leftPx = (peekCount - 1 - i) * PEEK_OFFSET;
+    return cardHtml(a, role, leftPx);
+  }).join("");
   const arrowsHtml = multi ? `
-    <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">↑</button>
-    <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">↓</button>
+    <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
+    <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
   ` : "";
   const countLabel = count === 1 ? "1 account connected" : `${count} accounts connected`;
+  const selectedLeftPx = peekCount * PEEK_OFFSET;
   container.innerHTML = `
-    <div class="accounts-dynamic">
+    <div class="accounts-dynamic" style="width:${stackWidth}px">
       <div class="account-card-stack">
         ${peekHtml}
-        ${selected ? cardHtml(selected, "selected") : ""}
+        ${selected ? cardHtml(selected, "selected", selectedLeftPx) : ""}
       </div>
     </div>
     <div class="accounts-static">
@@ -246,7 +255,7 @@ function renderAccountsHeader() {
       <div class="accounts-controls">
         ${arrowsHtml}
         <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
-        <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">Sign out all</button>
+        <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? "Sign out" : "Sign out all"}</button>
       </div>
     </div>`;
 }
@@ -550,6 +559,8 @@ function calculateBudget(p) {
   let paceStatus;
   if (calendarDaysLeft === 0) {
     paceStatus = "monthComplete";
+  } else if (usage >= 100) {
+    paceStatus = "over";
   } else if (burnRate === 0) {
     paceStatus = "noUsage";
   } else if (paceRatio < 0.85) {
@@ -721,32 +732,38 @@ function updateStatus() {
   const paceMessages = {
     monthComplete: () => {
       pill.textContent = "Month Complete";
+      pill.className = "pill";
       dot.style.background = r.remainingPct === 0 ? "var(--red)" : "var(--accent-hover)";
       const leftover = requestMode ? `${r.remainingRequests} req leftover` : `${fmt2(r.remainingPct)}% leftover`;
       paceTextEl.textContent = r.remainingPct === 0 ? `✕ Quota exhausted — ${fmt2(usage)}% used by end of month.` : `✓ Month complete — ${fmt2(usage)}% used, ${leftover}.`;
     },
     noUsage: () => {
       pill.textContent = "No usage";
+      pill.className = "pill";
       dot.style.background = "var(--muted)";
       paceTextEl.textContent = "No usage recorded yet.";
     },
     under: () => {
       pill.textContent = "Under Budget";
+      pill.className = "pill pill-under";
       dot.style.background = "var(--accent-hover)";
       paceTextEl.textContent = `✓ Burn rate (${burnRateDisp}) is well below ideal (${idealDisp}). You have headroom.`;
     },
     onTrack: () => {
       pill.textContent = "On Track";
+      pill.className = "pill pill-on-track";
       dot.style.background = "var(--blue)";
       paceTextEl.textContent = `✓ Burn rate (${burnRateDisp}) is close to ideal (${idealDisp}). Keep this pace.`;
     },
     slightlyOver: () => {
       pill.textContent = "Slightly Over";
+      pill.className = "pill pill-slightly-over";
       dot.style.background = "var(--yellow)";
       paceTextEl.textContent = `⚠ Burn rate (${burnRateDisp}) exceeds ideal (${idealDisp}). Consider shifting to cheaper models.`;
     },
     over: () => {
       pill.textContent = "Over Budget";
+      pill.className = "pill pill-over";
       dot.style.background = "var(--red)";
       paceTextEl.textContent = `✕ Burn rate (${burnRateDisp}) significantly exceeds ideal (${idealDisp}). Switch to 0.3× models now.`;
     }
@@ -754,17 +771,24 @@ function updateStatus() {
   paceMessages[r.paceStatus]();
   const projEl = document.getElementById("projectionLine");
   const projColor = r.projected > 100 ? "var(--red)" : r.projected > 90 ? "var(--yellow)" : "var(--accent-hover)";
+  const exhaustionLabel = (() => {
+    if (r.burnRate <= 0) return "?";
+    const exhaustDay = Math.round(currentDay + (100 - usage) / r.burnRate);
+    const daysAfter = Math.max(0, totalDays - exhaustDay);
+    const afterText = daysAfter > 0 ? ` (${daysAfter} days remaining)` : "";
+    return `~day ${exhaustDay}${afterText}`;
+  })();
   if (requestMode) {
     const projUsedReqs = Math.min(entitlement, Math.round(r.projected / 100 * entitlement));
     if (r.projected > 100) {
-      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${r.burnRate > 0 ? Math.round(currentDay + (100 - usage) / r.burnRate) : "?"}</span>`;
+      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ⚠ quota exhausted ${exhaustionLabel}</span>`;
     } else {
       projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projUsedReqs} req</span> <span class="fs-12 muted">— ${entitlement - projUsedReqs} req leftover</span>`;
     }
   } else {
     const projPct = fmt1(Math.min(r.projected, 100));
     if (r.projected > 100) {
-      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ⚠ quota exhausted ~day ${r.burnRate > 0 ? Math.round(currentDay + (100 - usage) / r.burnRate) : "?"}</span>`;
+      projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ⚠ quota exhausted ${exhaustionLabel}</span>`;
     } else {
       projEl.innerHTML = `<span class="proj-value" style="color:${projColor}">${projPct}%</span> <span class="fs-12 muted">— ${fmt1(100 - r.projected)}% leftover</span>`;
     }
@@ -1061,7 +1085,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     .card h2 {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 600;
       margin-bottom: 16px;
       color: var(--text);
@@ -1078,10 +1102,14 @@ document.addEventListener("DOMContentLoaded", () => {
       background: var(--tag-bg);
       color: var(--muted);
     }
+    .card h2 .pill.pill-under        { background: rgba(26,127,55,0.18);  color: #2ea043; }
+    .card h2 .pill.pill-on-track     { background: rgba(56,139,253,0.14); color: var(--blue); }
+    .card h2 .pill.pill-slightly-over{ background: rgba(210,153,34,0.18); color: var(--yellow); }
+    .card h2 .pill.pill-over         { background: rgba(218,54,51,0.18);  color: var(--red); }
 
     label {
       display: block;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--muted);
       margin-bottom: 6px;
       text-transform: uppercase;
@@ -1169,7 +1197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .progress-labels {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
     }
 
@@ -1323,17 +1351,21 @@ document.addEventListener("DOMContentLoaded", () => {
     .num-wrap input[type="number"] { margin-bottom: 0; border-radius: 6px 0 0 6px; -moz-appearance: textfield; appearance: textfield; }
     .num-wrap input[type="number"]::-webkit-inner-spin-button,
     .num-wrap input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
-    .num-spin { display: flex; flex-direction: column; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; overflow: hidden; }
+    .num-spin { display: flex; flex-direction: column; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; }
     .num-spin button { flex: 1; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 13px; width: 32px; padding: 0; line-height: 1; transition: background 0.1s, color 0.1s; user-select: none; }
     .num-spin button:last-child { border-bottom: none; }
+    .num-spin button:first-child { border-radius: 0 6px 0 0; }
+    .num-spin button:last-child  { border-radius: 0 0 6px 0; }
     .num-spin button:hover { background: rgba(56,139,253,0.15); color: var(--blue); }
 
     /* Dual spinner (two pairs of buttons) */
-    .num-spin-dual { display: flex; flex-direction: row; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; overflow: hidden; }
+    .num-spin-dual { display: flex; flex-direction: row; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; }
     .num-spin-group { display: flex; flex-direction: column; border-left: 1px solid var(--border); }
     .num-spin-group:first-child { border-left: none; }
     .num-spin-group button { flex: 1; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 11px; width: 36px; padding: 0 2px; line-height: 1; text-align: center; transition: background 0.1s, color 0.1s; user-select: none; }
     .num-spin-group button:last-child { border-bottom: none; }
+    .num-spin-group:last-child .spin-label { border-radius: 0 6px 0 0; }
+    .num-spin-group:last-child button:last-child  { border-radius: 0 0 6px 0; }
     .num-spin-group button:hover { background: rgba(56,139,253,0.15); color: var(--blue); }
     .num-spin-group .spin-label { font-size: 11px; color: var(--muted); text-align: center; padding: 2px 0; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); letter-spacing: 0.03em; text-transform: uppercase; }
 
@@ -1497,7 +1529,6 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ─── Account Card Stack ────────────────────────────────── */
 .accounts-dynamic {
   position: relative;
-  width: 220px;
   flex-shrink: 0;
 }
 
@@ -1508,7 +1539,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 .account-card {
   position: absolute;
-  width: 100%;
+  width: 280px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1516,29 +1547,25 @@ document.addEventListener("DOMContentLoaded", () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: left 0.25s ease, opacity 0.25s ease;
 }
 
 .account-card.selected {
-  position: relative;
   z-index: 3;
   opacity: 1;
-  transform: translateY(0);
   background: var(--tag-bg);
   border-color: var(--border);
 }
 
 .account-card.peek-1 {
   z-index: 2;
-  opacity: 0.45;
-  transform: translateY(6px) scale(0.97);
+  opacity: 0.67;
   pointer-events: none;
 }
 
 .account-card.peek-2 {
   z-index: 1;
-  opacity: 0.22;
-  transform: translateY(11px) scale(0.94);
+  opacity: 0.42;
   pointer-events: none;
 }
 
@@ -1587,7 +1614,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cursor: pointer;
   font-size: 14px;
   padding: 2px 4px;
-  opacity: 0;
+  opacity: 0.5;
   transition: opacity 0.15s, color 0.15s;
   flex-shrink: 0;
 }
@@ -1650,7 +1677,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 @media (max-width: 640px) {
   .accounts-header { flex-direction: column; }
-  .accounts-dynamic { width: 100%; }
+  .accounts-dynamic { width: 100% !important; }
 }</style>
 </head>
 <body>
@@ -1708,10 +1735,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <button id="fetchBtn" onclick="fetchRealUsage()" class="fetch-btn"
           title="Fetch quota from GitHub (requires ghu_ OAuth token)">Fetch</button>
       </div>
-      <div class="d-flex jc-between fs-12 muted mb-4 pr-88">
+      <div class="d-flex jc-between fs-13 muted mb-4 pr-88">
         <span>0%</span><span id="usageDisplay" class="fw-600 text-main">50%</span><span>100%</span>
       </div>
-      <div id="fetchStatus" class="fs-11 muted mb-8 min-h-16"></div>
+      <div id="fetchStatus" class="fs-12 muted mb-8 min-h-16"></div>
       <div class="num-wrap">
         <input type="number" id="usageInput" min="0" max="100" step="0.1" value="50"
           oninput="syncUsageFromInput(this.value)" />
