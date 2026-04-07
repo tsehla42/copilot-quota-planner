@@ -137,6 +137,12 @@ describe('calculateBudget', () => {
       const r = budget({ usage: 90, currentDay: 15, totalDays: 30 });
       expect(r.paceStatus).toBe('over');
     });
+
+    it('over when usage is 100% (quota exhausted mid-month)', () => {
+      // Day 6 of 30, 100% used — idealDailyBudget=0 (paceRatio=0), but quota is gone → should be 'over'
+      const r = budget({ usage: 100, currentDay: 6, totalDays: 30 });
+      expect(r.paceStatus).toBe('over');
+    });
   });
 
   describe('weekend exclusion', () => {

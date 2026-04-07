@@ -74,6 +74,8 @@ export function calculateBudget(p) {
   if (calendarDaysLeft === 0) {
     // 'monthComplete': check remainingPct === 0 to distinguish exhausted vs. leftover
     paceStatus = 'monthComplete';
+  } else if (usage >= 100) {
+    paceStatus = 'over';
   } else if (burnRate === 0) {
     paceStatus = 'noUsage';
   } else if (paceRatio < 0.85) {
