@@ -472,6 +472,21 @@
   overflow: hidden;
 }
 
+@keyframes accountsFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.accounts-header-body {
+  animation: accountsFadeIn 0.2s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .accounts-static {
   display: flex;
   flex-direction: column;
