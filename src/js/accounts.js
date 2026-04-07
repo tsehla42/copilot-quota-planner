@@ -236,8 +236,8 @@ export function renderAccountsHeader() {
     .join('');
 
   const arrowsHtml = multi ? `
-    <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">↑</button>
-    <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">↓</button>
+    <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
+    <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
   ` : '';
 
   const countLabel = count === 1 ? '1 account connected' : `${count} accounts connected`;
