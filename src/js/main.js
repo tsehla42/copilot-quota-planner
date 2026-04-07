@@ -31,7 +31,6 @@ export async function fetchRealUsage() {
   const token = getSelectedToken();
   if (!token) {
     _setFetchStatus('No token — click "Connect token" above', 'var(--muted)');
-    openAccountsModal();
     return;
   }
 
