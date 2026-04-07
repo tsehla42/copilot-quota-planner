@@ -1436,7 +1436,8 @@ document.addEventListener("DOMContentLoaded", () => {
     
     /* ── Clear button ── */
     .btn-clear {
-      padding: 7px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 4px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; flex-shrink: 0;
       transition: all 0.15s; white-space: nowrap;
     }
@@ -1779,18 +1780,23 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
 
-      <label>Additional day-offs</label>
-      <div class="d-flex ai-center gap-8 mb-6 flex-wrap">
-        <label class="check-row mb-0" id="excludeWeekendsLbl" title="Exclude Saturdays and Sundays from working-day calculations. Affects ideal daily budget and days remaining.">
-          <input type="checkbox" id="excludeWeekendsChk" onchange="onWeekendsToggle()" />
-          <span class="check-box"></span>
-          <span class="check-lbl nowrap">Exclude weekends</span>
-        </label>
-        <button onclick="openCalendar()" class="cal-open-btn" title="Pick specific days off in a calendar"><span class="fs-18">📅</span> Calendar</button>
-      </div>
-      <div class="d-flex ai-center gap-8 mb-10">
-        <span>Days selected in calendar: <span id="calDayoffCount" class="fw-600 text-main">0</span></span>
-        <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all custom day-offs">🗑 Clear</button>
+      <div class="d-grid-2 gap-10 mb-14">
+        <div>
+          <label class="mb-6">Weekends</label>
+          <label class="check-row mb-0" id="excludeWeekendsLbl" title="Exclude Saturdays and Sundays from working-day calculations. Affects ideal daily budget and days remaining.">
+            <input type="checkbox" id="excludeWeekendsChk" onchange="onWeekendsToggle()" />
+            <span class="check-box"></span>
+            <span class="check-lbl nowrap">Exclude weekends</span>
+          </label>
+        </div>
+        <div>
+          <label class="mb-6">Custom days</label>
+          <div class="d-flex ai-center gap-8">
+            <button onclick="openCalendar()" class="cal-open-btn" title="Pick specific days off in a calendar"><span class="fs-18">📅</span> Calendar</button>
+            <span class="check-lbl">Days selected: <span id="calDayoffCount" class="fw-600 text-main">0</span></span>
+            <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all custom day-offs">🗑 Clear</button>
+          </div>
+        </div>
       </div>
       <div class="d-flex ai-center gap-8 req-toggle-row">
         <label class="toggle-switch d-flex ai-center gap-8" title="Show remaining budget as requests instead of percentages" style="cursor:pointer">
