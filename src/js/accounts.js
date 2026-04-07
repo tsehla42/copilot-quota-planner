@@ -267,6 +267,9 @@ export function openAccountsModal() {
   if (!content || !modal) return;
   content.innerHTML = _tokenModalHtml();
   modal.classList.add('open');
+  setTimeout(() => {
+    content.querySelector('.token-input')?.focus();
+  }, 0);
 }
 
 export function closeAccountsModal() {
