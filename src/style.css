@@ -23,10 +23,23 @@
       padding: 24px 16px 60px;
     }
 
-    h1 {
-      font-size: 22px;
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      margin: -24px -16px 16px;
+      display: flex;
+      align-items: center;
+    }
+
+    .site-header-title {
+      font-size: 14px;
       font-weight: 600;
-      margin-bottom: 20px;
+      color: var(--text);
+      letter-spacing: 0.01em;
     }
 
     .subtitle {
