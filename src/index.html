@@ -61,10 +61,10 @@
         <button id="fetchBtn" onclick="fetchRealUsage()" class="fetch-btn"
           title="Fetch quota from GitHub (requires ghu_ OAuth token)">Fetch</button>
       </div>
-      <div class="d-flex jc-between fs-12 muted mb-4 pr-88">
+      <div class="d-flex jc-between fs-13 muted mb-4 pr-88">
         <span>0%</span><span id="usageDisplay" class="fw-600 text-main">50%</span><span>100%</span>
       </div>
-      <div id="fetchStatus" class="fs-11 muted mb-8 min-h-16"></div>
+      <div id="fetchStatus" class="fs-12 muted mb-8 min-h-16"></div>
       <div class="num-wrap">
         <input type="number" id="usageInput" min="0" max="100" step="0.1" value="50"
           oninput="syncUsageFromInput(this.value)" />
