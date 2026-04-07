@@ -202,7 +202,10 @@ export function renderAccountsHeader() {
       ].filter(Boolean)
     : [];
 
-  function cardHtml(account, role) {
+  const CARD_WIDTH  = 280;
+  const PEEK_OFFSET = 40;
+
+  function cardHtml(account, role, leftPx) {
     const removeBtn = (role === 'selected' && multi) ? `
       <button class="account-card-remove" onclick="removeAccountAndRender('${escHtml(account.id)}')" title="Remove account" aria-label="Remove ${escHtml(account.login)}">✕</button>
     ` : '';
@@ -211,7 +214,7 @@ export function renderAccountsHeader() {
       ? `<img src="${escHtml(account.avatar_url)}" alt="" class="account-card-avatar" loading="lazy" />`
       : `<div class="account-card-avatar-placeholder"></div>`;
     return `
-      <div class="account-card ${role}">
+      <div class="account-card ${role}" style="left:${leftPx}px">
         ${avatarEl}
         <div class="account-card-info">
           <div class="account-card-login">@${escHtml(account.login)}</div>
@@ -221,8 +224,15 @@ export function renderAccountsHeader() {
       </div>`;
   }
 
+  const peekCount  = peekAccounts.length;
+  const stackWidth = CARD_WIDTH + peekCount * PEEK_OFFSET;
+
   const peekHtml = peekAccounts
-    .map((a, i) => cardHtml(a, i === 0 ? 'peek-1' : 'peek-2'))
+    .map((a, i) => {
+      const role   = i === 0 ? 'peek-1' : 'peek-2';
+      const leftPx = (peekCount - 1 - i) * PEEK_OFFSET;
+      return cardHtml(a, role, leftPx);
+    })
     .join('');
 
   const arrowsHtml = multi ? `
@@ -232,11 +242,13 @@ export function renderAccountsHeader() {
 
   const countLabel = count === 1 ? '1 account connected' : `${count} accounts connected`;
 
+  const selectedLeftPx = peekCount * PEEK_OFFSET;
+
   container.innerHTML = `
-    <div class="accounts-dynamic">
+    <div class="accounts-dynamic" style="width:${stackWidth}px">
       <div class="account-card-stack">
         ${peekHtml}
-        ${selected ? cardHtml(selected, 'selected') : ''}
+        ${selected ? cardHtml(selected, 'selected', selectedLeftPx) : ''}
       </div>
     </div>
     <div class="accounts-static">
@@ -244,7 +256,7 @@ export function renderAccountsHeader() {
       <div class="accounts-controls">
         ${arrowsHtml}
         <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
-        <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">Sign out all</button>
+        <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? 'Sign out' : 'Sign out all'}</button>
       </div>
     </div>`;
 }
