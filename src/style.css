@@ -329,7 +329,7 @@
     .num-spin-group:first-child { border-left: none; }
     .num-spin-group button { flex: 1; background: var(--tag-bg); border: none; border-bottom: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 11px; width: 36px; padding: 0 2px; line-height: 1; text-align: center; transition: background 0.1s, color 0.1s; user-select: none; }
     .num-spin-group button:last-child { border-bottom: none; }
-    .num-spin-group:last-child button:first-child { border-radius: 0 6px 0 0; }
+    .num-spin-group:last-child .spin-label { border-radius: 0 6px 0 0; }
     .num-spin-group:last-child button:last-child  { border-radius: 0 0 6px 0; }
     .num-spin-group button:hover { background: rgba(56,139,253,0.15); color: var(--blue); }
     .num-spin-group .spin-label { font-size: 11px; color: var(--muted); text-align: center; padding: 2px 0; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); letter-spacing: 0.03em; text-transform: uppercase; }
