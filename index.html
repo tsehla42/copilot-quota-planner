@@ -42,6 +42,7 @@
   }
 })();
 const GH_API = "https://api.github.com";
+const GITHUB_ICON = `<svg height="15" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
 function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -190,14 +191,14 @@ function renderAccountsHeader() {
   const accounts = getAccounts();
   if (!accounts.length) {
     container.innerHTML = `
-      <div class="d-flex jc-between ai-center flex-wrap gap-12" style="width:100%">
+      <div class="accounts-header-body">
         <div>
           <div class="fw-600 mb-3">Connect GitHub token (optional)</div>
           <div class="fs-12 muted">Add a token to auto-fetch your quota from GitHub.</div>
         </div>
         <div>
           <button class="auth-btn auth-btn-primary" onclick="openAccountsModal()">
-            <svg height="15" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            ${GITHUB_ICON}
             Connect token
           </button>
         </div>
@@ -244,18 +245,20 @@ function renderAccountsHeader() {
   const countLabel = count === 1 ? "1 account connected" : `${count} accounts connected`;
   const selectedLeftPx = peekCount * PEEK_OFFSET;
   container.innerHTML = `
-    <div class="accounts-dynamic" style="width:${stackWidth}px">
-      <div class="account-card-stack">
-        ${peekHtml}
-        ${selected ? cardHtml(selected, "selected", selectedLeftPx) : ""}
+    <div class="accounts-header-body">
+      <div class="accounts-dynamic" style="width:${stackWidth}px">
+        <div class="account-card-stack">
+          ${peekHtml}
+          ${selected ? cardHtml(selected, "selected", selectedLeftPx) : ""}
+        </div>
       </div>
-    </div>
-    <div class="accounts-static">
-      <div class="accounts-label">${countLabel}</div>
-      <div class="accounts-controls">
-        ${arrowsHtml}
-        <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
-        <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? "Sign out" : "Sign out all"}</button>
+      <div class="accounts-static">
+        <div class="accounts-label">${countLabel}</div>
+        <div class="accounts-controls">
+          ${arrowsHtml}
+          <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
+          <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? "Sign out" : "Sign out all"}</button>
+        </div>
       </div>
     </div>`;
 }
@@ -265,6 +268,10 @@ function openAccountsModal() {
   if (!content || !modal) return;
   content.innerHTML = _tokenModalHtml();
   modal.classList.add("open");
+  setTimeout(() => {
+    var _a;
+    (_a = content.querySelector(".token-input")) == null ? void 0 : _a.focus();
+  }, 0);
 }
 function closeAccountsModal() {
   var _a;
@@ -880,7 +887,6 @@ async function fetchRealUsage() {
   const token = getSelectedToken();
   if (!token) {
     _setFetchStatus('No token — click "Connect token" above', "var(--muted)");
-    openAccountsModal();
     return;
   }
   const btn = document.getElementById("fetchBtn");
@@ -1055,11 +1061,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     .site-header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
       background: var(--bg);
-      border-bottom: 1px solid var(--border);
       padding: 8px 16px;
       margin: -24px -16px 16px;
       display: flex;
@@ -1115,10 +1117,10 @@ document.addEventListener("DOMContentLoaded", () => {
       background: var(--tag-bg);
       color: var(--muted);
     }
-    .card h2 .pill.pill-under        { background: rgba(26,127,55,0.18);  color: #2ea043; }
-    .card h2 .pill.pill-on-track     { background: rgba(56,139,253,0.14); color: var(--blue); }
-    .card h2 .pill.pill-slightly-over{ background: rgba(210,153,34,0.18); color: var(--yellow); }
-    .card h2 .pill.pill-over         { background: rgba(218,54,51,0.18);  color: var(--red); }
+    .card h2 .pill.pill-under        { background: rgba(26,127,55,0.12);  color: rgba(26,127,55,0.88); }
+    .card h2 .pill.pill-on-track     { background: rgba(26,127,55,0.18);  color: rgba(26,127,55,0.92); }
+    .card h2 .pill.pill-slightly-over{ background: rgba(210,153,34,0.12); color: rgba(210,153,34,0.67) }
+    .card h2 .pill.pill-over         { background: rgba(218,54,51,0.12);  color:  rgba(218,54,51,0.67) }
 
     label {
       display: block;
@@ -1340,7 +1342,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .modal input[type="text"], .modal input[type="password"] {
       width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
       color: var(--text); padding: 8px 12px; font-size: 13px;
-      font-family: 'SFMono-Regular', Consolas, monospace; outline: none; margin-bottom: 14px;
+      font-family: 'SFMono-Regular', Consolas, monospace; outline: none;
       transition: border-color 0.15s;
     }
     .modal input:focus { border-color: var(--blue); }
@@ -1441,7 +1443,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .fetch-btn:hover { border-color: var(--blue); color: var(--blue); }
     .fetch-btn:disabled { opacity: 0.6; cursor: default; }
     .cal-open-btn {
-      padding: 7px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; white-space: nowrap;
       transition: all 0.15s; flex-shrink: 0;
     }
@@ -1450,7 +1452,7 @@ document.addEventListener("DOMContentLoaded", () => {
     /* ── Clear button ── */
     .btn-clear {
       display: flex; align-items: center; justify-content: center;
-      padding: 4px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 4px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; flex-shrink: 0;
       transition: all 0.15s; white-space: nowrap;
     }
@@ -1501,6 +1503,21 @@ document.addEventListener("DOMContentLoaded", () => {
   padding: 16px 20px;
   height: 88px;
   overflow: hidden;
+}
+
+@keyframes accountsFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.accounts-header-body {
+  animation: accountsFadeIn 0.2s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .accounts-static {
@@ -1638,8 +1655,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ─── Token Modal multi-field ───────────────────────────── */
 .token-fields { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
-.token-field-row { display: flex; gap: 6px; align-items: center; }
-.token-field-row input { flex: 1; }
+.token-field-row { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; }
+.token-field-row input { flex: 1; margin-bottom: 0; }
 .token-field-remove {
   background: none;
   border: 1px solid var(--border);
@@ -1696,9 +1713,8 @@ document.addEventListener("DOMContentLoaded", () => {
 </head>
 <body>
   <header class="site-header">
-    <span class="site-header-title">GitHub Copilot Quota Planner</span>
+      <h1 class="site-header-title">GitHub Copilot Quota Planner</h1>
   </header>
-
   <!-- ─── ACCOUNTS HEADER ──────────────────────────────── -->
   <div class="accounts-header mb16" id="accountsHeader">
     <!-- rendered by renderAccountsHeader() in accounts.js -->
@@ -1806,7 +1822,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div>
           <label class="mb-6">Custom days</label>
-          <div class="d-flex ai-center gap-8">
+          <div class="d-flex ai-center jc-between gap-8">
             <button onclick="openCalendar()" class="cal-open-btn" title="Pick specific days off in a calendar"><span class="fs-18">📅</span> Calendar</button>
             <span class="check-lbl">Days selected: <span id="calDayoffCount" class="fw-600 text-main">0</span></span>
             <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all custom day-offs">🗑 Clear</button>
@@ -1908,8 +1924,8 @@ document.addEventListener("DOMContentLoaded", () => {
   </div>
 
   <p class="footnote">
-    Model costs are approximate — GitHub may adjust multipliers. 
-    Actual quota shown at <a href="https://github.com/settings/copilot" target="_blank">github.com/settings/copilot</a>.
+    Model costs are approximate — GitHub may adjust multipliers.
+    Check usage and settings on <a href="https://github.com/settings/copilot" target="_blank">github.com/settings/copilot</a>.
     Plan quota resets on the 1st of each month at 00:00 UTC.
   </p>
 

@@ -24,11 +24,7 @@
     }
 
     .site-header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
       background: var(--bg);
-      border-bottom: 1px solid var(--border);
       padding: 8px 16px;
       margin: -24px -16px 16px;
       display: flex;
@@ -84,10 +80,10 @@
       background: var(--tag-bg);
       color: var(--muted);
     }
-    .card h2 .pill.pill-under        { background: rgba(26,127,55,0.40);  color: #3fb950; }
-    .card h2 .pill.pill-on-track     { background: rgba(26,127,55,0.18);  color: #2ea043; }
-    .card h2 .pill.pill-slightly-over{ background: rgba(210,153,34,0.18); color: var(--yellow); }
-    .card h2 .pill.pill-over         { background: rgba(218,54,51,0.18);  color: var(--red); }
+    .card h2 .pill.pill-under        { background: rgba(26,127,55,0.12);  color: rgba(26,127,55,0.88); }
+    .card h2 .pill.pill-on-track     { background: rgba(26,127,55,0.18);  color: rgba(26,127,55,0.92); }
+    .card h2 .pill.pill-slightly-over{ background: rgba(210,153,34,0.12); color: rgba(210,153,34,0.67) }
+    .card h2 .pill.pill-over         { background: rgba(218,54,51,0.12);  color:  rgba(218,54,51,0.67) }
 
     label {
       display: block;
@@ -309,7 +305,7 @@
     .modal input[type="text"], .modal input[type="password"] {
       width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
       color: var(--text); padding: 8px 12px; font-size: 13px;
-      font-family: 'SFMono-Regular', Consolas, monospace; outline: none; margin-bottom: 14px;
+      font-family: 'SFMono-Regular', Consolas, monospace; outline: none;
       transition: border-color 0.15s;
     }
     .modal input:focus { border-color: var(--blue); }
@@ -410,7 +406,7 @@
     .fetch-btn:hover { border-color: var(--blue); color: var(--blue); }
     .fetch-btn:disabled { opacity: 0.6; cursor: default; }
     .cal-open-btn {
-      padding: 7px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; white-space: nowrap;
       transition: all 0.15s; flex-shrink: 0;
     }
@@ -419,7 +415,7 @@
     /* ── Clear button ── */
     .btn-clear {
       display: flex; align-items: center; justify-content: center;
-      padding: 4px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 4px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; flex-shrink: 0;
       transition: all 0.15s; white-space: nowrap;
     }
@@ -622,7 +618,7 @@
 
 /* ─── Token Modal multi-field ───────────────────────────── */
 .token-fields { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
-.token-field-row { display: flex; gap: 6px; align-items: center; }
+.token-field-row { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; }
 .token-field-row input { flex: 1; margin-bottom: 0; }
 .token-field-remove {
   background: none;
