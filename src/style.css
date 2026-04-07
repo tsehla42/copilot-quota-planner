@@ -71,6 +71,10 @@
       background: var(--tag-bg);
       color: var(--muted);
     }
+    .card h2 .pill.pill-under        { background: rgba(26,127,55,0.18);  color: #2ea043; }
+    .card h2 .pill.pill-on-track     { background: rgba(56,139,253,0.14); color: var(--blue); }
+    .card h2 .pill.pill-slightly-over{ background: rgba(210,153,34,0.18); color: var(--yellow); }
+    .card h2 .pill.pill-over         { background: rgba(218,54,51,0.18);  color: var(--red); }
 
     label {
       display: block;

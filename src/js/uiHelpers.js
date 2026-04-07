@@ -141,6 +141,7 @@ export function updateStatus() {
   const paceMessages = {
     monthComplete: () => {
       pill.textContent = 'Month Complete';
+      pill.className = 'pill';
       dot.style.background = r.remainingPct === 0 ? 'var(--red)' : 'var(--accent-hover)';
       const leftover = requestMode
         ? `${r.remainingRequests} req leftover`
@@ -151,26 +152,31 @@ export function updateStatus() {
     },
     noUsage: () => {
       pill.textContent = 'No usage';
+      pill.className = 'pill';
       dot.style.background = 'var(--muted)';
       paceTextEl.textContent = 'No usage recorded yet.';
     },
     under: () => {
       pill.textContent = 'Under Budget';
+      pill.className = 'pill pill-under';
       dot.style.background = 'var(--accent-hover)';
       paceTextEl.textContent = `✓ Burn rate (${burnRateDisp}) is well below ideal (${idealDisp}). You have headroom.`;
     },
     onTrack: () => {
       pill.textContent = 'On Track';
+      pill.className = 'pill pill-on-track';
       dot.style.background = 'var(--blue)';
       paceTextEl.textContent = `✓ Burn rate (${burnRateDisp}) is close to ideal (${idealDisp}). Keep this pace.`;
     },
     slightlyOver: () => {
       pill.textContent = 'Slightly Over';
+      pill.className = 'pill pill-slightly-over';
       dot.style.background = 'var(--yellow)';
       paceTextEl.textContent = `⚠ Burn rate (${burnRateDisp}) exceeds ideal (${idealDisp}). Consider shifting to cheaper models.`;
     },
     over: () => {
       pill.textContent = 'Over Budget';
+      pill.className = 'pill pill-over';
       dot.style.background = 'var(--red)';
       paceTextEl.textContent = `✕ Burn rate (${burnRateDisp}) significantly exceeds ideal (${idealDisp}). Switch to 0.3× models now.`;
     },
