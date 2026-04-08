@@ -1,8 +1,20 @@
 import { GH_API, escHtml, GITHUB_ICON } from './auth.js';
 
 const CARD_WIDTH  = 280;
-const PEEK_OFFSET = 40;
+const PEEK_OFFSET = 60;
 let _lastRenderedCount = -1;
+
+/**
+ * Calculate maximum peeks that can fit in viewport.
+ * Formula: (viewportWidth - 280 [card width] - 40 [padding]) / 60 [peek offset]
+ * But max 3 peeks (for 4 total slots), and not more than accountCount - 1.
+ */
+function _computeMaxPeeks(accountCount) {
+  const viewportWidth = document.getElementById('accountsDynamic')?.parentElement?.offsetWidth
+    ?? window.innerWidth;
+  const spaceForPeeks = Math.floor((viewportWidth - 280 - 40) / 60);
+  return Math.min(accountCount - 1, 3, Math.max(0, spaceForPeeks));
+}
 
 export const GH_ACCOUNTS_KEY  = 'gh_accounts';
 export const GH_SELECTED_KEY  = 'gh_selected_id';
@@ -202,8 +214,8 @@ export function renderAccountsHeader() {
   if (count !== _lastRenderedCount) {
     _lastRenderedCount = count;
     const multi = count > 1;
-    const peekCount = Math.min(count - 1, 2);
-    const stackWidth = CARD_WIDTH + peekCount * PEEK_OFFSET;
+    const maxPeeks = _computeMaxPeeks(count);
+    const stackWidth = CARD_WIDTH + maxPeeks * PEEK_OFFSET;
     const arrowsHtml = multi ? `
       <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
       <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
@@ -217,6 +229,7 @@ export function renderAccountsHeader() {
             <div class="account-card" id="cardSlot-0" style="display:none"></div>
             <div class="account-card" id="cardSlot-1" style="display:none"></div>
             <div class="account-card" id="cardSlot-2" style="display:none"></div>
+            <div class="account-card" id="cardSlot-3" style="display:none"></div>
           </div>
         </div>
         <div class="accounts-static" id="accountsStatic">
@@ -231,27 +244,30 @@ export function renderAccountsHeader() {
   }
 
   // Always update card slots in-place (no animation on initial/count-change render)
-  _updateCardSlots(false);
+  const maxPeeks = _computeMaxPeeks(count);
+  _updateCardSlots(false, null, maxPeeks);
 }
 
 /**
- * Update the 3 persistent card slots in-place.
+ * Update the persistent card slots in-place (up to 4 slots).
  *
  * Slot layout (back to front):
- *   slot-0 = peek-2 (furthest back)
- *   slot-1 = peek-1 (one behind)
- *   slot-2 = selected
+ *   slot-0 = peek-3 (furthest back, if visible)
+ *   slot-1 = peek-2 (if visible)
+ *   slot-2 = peek-1 (if visible)
+ *   slot-3 = selected (frontmost)
  *
  * @param {boolean} animate if true, add .entering to selected slot and .exiting to old selected
  * @param {string|null} prevSelectedId ID of old selected account (for exit animation)
+ * @param {number} maxPeeks max number of peek cards to show (computed based on viewport)
  */
-function _updateCardSlots(animate, prevSelectedId = null) {
+function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
   const accounts = getAccounts();
   const selected = getSelectedAccount();
   if (!accounts.length || !selected) return;
 
   // Clean animation classes from all slots BEFORE updating
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const slot = document.getElementById(`cardSlot-${i}`);
     if (slot) {
       slot.classList.remove('entering', 'exiting');
@@ -263,15 +279,23 @@ function _updateCardSlots(animate, prevSelectedId = null) {
   const multi = count > 1;
 
   // Determine which accounts occupy which slots (back to front)
-  const slotAccounts = [
-    count >= 3 ? accounts[(selectedIdx + 2) % count] : null,
-    count >= 2 ? accounts[(selectedIdx + 1) % count] : null,
-    selected,
-  ];
+  // Slots 0 to maxPeeks-1 are peeks, slot maxPeeks is selected
+  const slotAccounts = [];
+  for (let i = 0; i <= maxPeeks; i++) {
+    if (i < maxPeeks) {
+      // Peek card: account at (selectedIdx + maxPeeks + 1 - i) % count
+      slotAccounts.push(accounts[(selectedIdx + maxPeeks + 1 - i) % count]);
+    } else {
+      // Selected card (always at the last position)
+      slotAccounts.push(selected);
+    }
+  }
 
-  const peekCount = Math.min(count - 1, 2);
-  const roles = ['peek-2', 'peek-1', 'selected'];
-  const leftPositions = [0, PEEK_OFFSET, peekCount * PEEK_OFFSET];
+  const roles = [];
+  for (let i = 0; i < maxPeeks; i++) {
+    roles.push(`peek-${maxPeeks - i}`);
+  }
+  roles.push('selected');
 
   slotAccounts.forEach((account, i) => {
     const slot = document.getElementById(`cardSlot-${i}`);
@@ -284,7 +308,7 @@ function _updateCardSlots(animate, prevSelectedId = null) {
     }
 
     slot.style.display = '';
-    slot.style.left = leftPositions[i] + 'px';
+    slot.style.left = i * PEEK_OFFSET + 'px';
 
     const role = roles[i];
     const isSelectedSlot = role === 'selected';
@@ -435,7 +459,9 @@ export function navigateAccount(direction) {
   if (!nextId || nextId === prevId) return;
   saveSelectedId(nextId);
   // Animate the card slots
-  _updateCardSlots(true, prevId);
+  const accounts = getAccounts();
+  const maxPeeks = _computeMaxPeeks(accounts.length);
+  _updateCardSlots(true, prevId, maxPeeks);
   // Dispatch event so main.js loads cached quota
   window.dispatchEvent(new CustomEvent('account:switch-requested', { detail: { id: nextId } }));
 }
