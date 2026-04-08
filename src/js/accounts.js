@@ -184,6 +184,33 @@ export function showToast(msg, isError = false) {
   _toastTimer = setTimeout(() => el.classList.remove('toast-visible'), 3500);
 }
 
+function _toggleBtnHtml() {
+  const selected = getSelectedAccount();
+  const iconContent = (selected?.avatar_url)
+    ? `<img src="${escHtml(selected.avatar_url)}" alt="${escHtml(selected.login)}" loading="lazy" />`
+    : GITHUB_ICON;
+  return `<button id="headerToggleBtn" onclick="toggleHeader()" title="Toggle header" aria-label="Toggle accounts header">${iconContent}<span class="toggle-hint"></span></button>`;
+}
+
+function _syncToggleBtnIcon() {
+  const btn = document.getElementById('headerToggleBtn');
+  if (!btn) return;
+  const selected = getSelectedAccount();
+  // Preserve the .toggle-hint span, only replace the icon
+  const hint = btn.querySelector('.toggle-hint');
+  btn.innerHTML = '';
+  if (selected?.avatar_url) {
+    const img = document.createElement('img');
+    img.src = escHtml(selected.avatar_url);
+    img.alt = escHtml(selected.login);
+    img.loading = 'lazy';
+    btn.appendChild(img);
+  } else {
+    btn.insertAdjacentHTML('beforeend', GITHUB_ICON);
+  }
+  if (hint) btn.appendChild(hint);
+}
+
 export function renderAccountsHeader() {
   const container = document.getElementById('accountsHeader');
   if (!container) return;
@@ -193,6 +220,7 @@ export function renderAccountsHeader() {
   if (!accounts.length) {
     _lastRenderedCount = 0;
     container.innerHTML = `
+      ${_toggleBtnHtml()}
       <div class="accounts-header-body">
         <div>
           <div class="fw-600 mb-3">GitHub Copilot Quota Planner</div>
@@ -223,6 +251,7 @@ export function renderAccountsHeader() {
     const accountsText = count === 1 ? '1 account connected' : `${count} accounts connected`;
 
     container.innerHTML = `
+      ${_toggleBtnHtml()}
       <div class="accounts-header-body">
         <div class="accounts-dynamic" id="accountsDynamic" style="width:${stackWidth}px">
           <div class="account-card-stack" id="cardStack">
@@ -249,6 +278,37 @@ export function renderAccountsHeader() {
   // Always update card slots in-place (no animation on initial/count-change render)
   const maxPeeks = _computeMaxPeeks(count);
   _updateCardSlots(false, null, maxPeeks);
+}
+
+export function toggleHeader() {
+  const header = document.getElementById('accountsHeader');
+  const btn    = document.getElementById('headerToggleBtn');
+  if (!header || !btn) return;
+  const isCollapsed = header.classList.contains('collapsed');
+  if (isCollapsed) {
+    header.classList.remove('collapsed');
+    btn.classList.remove('floating');
+    localStorage.setItem('headerCollapsed', 'false');
+  } else {
+    header.classList.add('collapsed');
+    btn.classList.add('floating');
+    localStorage.setItem('headerCollapsed', 'true');
+  }
+}
+
+export function initHeaderCollapsed() {
+  if (localStorage.getItem('headerCollapsed') !== 'true') return;
+  const header = document.getElementById('accountsHeader');
+  const btn    = document.getElementById('headerToggleBtn');
+  if (!header || !btn) return;
+  // Apply without animation
+  header.classList.add('no-transition');
+  header.classList.add('collapsed');
+  btn.classList.add('floating');
+  // Remove no-transition after one frame
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => header.classList.remove('no-transition'));
+  });
 }
 
 /**
@@ -369,6 +429,7 @@ function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
       }
     });
   }
+  _syncToggleBtnIcon();
 }
 
 export function openAccountsModal() {

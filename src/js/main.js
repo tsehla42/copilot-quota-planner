@@ -3,7 +3,7 @@ import {
   openAccountsModal, closeAccountsModal, signOutAllAndRender,
   _addTokenField, _submitTokens, navigateAccount, removeAccountAndRender,
   migrateFromLegacy, updateAccountQuota, getSelectedAccount, showToast,
-  getAccounts, saveSelectedId,
+  getAccounts, saveSelectedId, toggleHeader, initHeaderCollapsed,
 } from './accounts.js';
 import { escHtml, GH_API, _setFetchStatus } from './auth.js';
 import {
@@ -20,7 +20,7 @@ Object.assign(window, {
   onWeekendsToggle, onCalWeekendsToggle,
   openAccountsModal, closeAccountsModal, signOutAllAndRender,
   _addTokenField, _submitTokens, navigateAccount, removeAccountAndRender,
-  fetchRealUsage, onMonthLenChange,
+  fetchRealUsage, onMonthLenChange, toggleHeader,
 });
 
 // ─── API fetch ─────────────────────────────────────────────
@@ -167,6 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Migrate legacy gh_token / gh_user keys if present
   migrateFromLegacy();
+
+  // Restore header collapsed state
+  initHeaderCollapsed();
 
   // Close popups on Escape
   document.addEventListener('keydown', e => {

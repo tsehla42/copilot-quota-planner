@@ -443,6 +443,7 @@
 
 /* ─── Accounts Header ──────────────────────────────────── */
 .accounts-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -451,8 +452,92 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px 20px;
-  height: 88px;
+  max-height: 120px;
   overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease, border-color 0.3s ease, margin 0.3s ease;
+}
+
+.accounts-header.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  border-color: transparent;
+  margin-bottom: 0;
+}
+
+.accounts-header.no-transition,
+.accounts-header.no-transition * {
+  transition: none !important;
+}
+
+/* ─── Header toggle button ──────────────────────────────── */
+#headerToggleBtn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--tag-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  z-index: 10;
+  padding: 0;
+}
+#headerToggleBtn:hover {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(56,139,253,0.15);
+}
+#headerToggleBtn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+#headerToggleBtn svg {
+  color: var(--muted);
+  width: 18px;
+  height: 18px;
+}
+#headerToggleBtn .toggle-hint {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  font-size: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  line-height: 1;
+}
+#headerToggleBtn:hover .toggle-hint { opacity: 1; }
+
+/* Floating state (when header is collapsed) */
+#headerToggleBtn.floating {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 200;
+}
+#headerToggleBtn.floating .toggle-hint::before {
+  content: '▲';
+}
+#headerToggleBtn:not(.floating) .toggle-hint::before {
+  content: '▼';
 }
 
 @keyframes accountsFadeIn {
