@@ -292,8 +292,8 @@ function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
   const slotAccounts = [];
   for (let i = 0; i <= maxPeeks; i++) {
     if (i < maxPeeks) {
-      // Peek card: account at (selectedIdx + maxPeeks + 1 - i) % count
-      slotAccounts.push(accounts[(selectedIdx + maxPeeks + 1 - i) % count]);
+      // Peek card: account at (selectedIdx + (maxPeeks - i)) % count
+      slotAccounts.push(accounts[(selectedIdx + (maxPeeks - i)) % count]);
     } else {
       // Selected card (always at the last position)
       slotAccounts.push(selected);

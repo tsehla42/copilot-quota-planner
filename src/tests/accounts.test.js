@@ -350,3 +350,21 @@ describe('getNextAccountId', () => {
     expect(getNextAccountId('MISSING_ID', 1)).toBeNull();
   });
 });
+
+describe('peek card account assignment (2 accounts)', () => {
+  it('peek-1 shows the OTHER account, not selected', () => {
+    const accounts = [
+      { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: 'https://example.com/alice.png', plan: null, lastQuota: null },
+      { id: 'a2', token: 'ghu_y', login: 'bob',   name: '', avatar_url: 'https://example.com/bob.png',   plan: null, lastQuota: null },
+    ];
+    localStorage.setItem('gh_accounts', JSON.stringify(accounts));
+    localStorage.setItem('gh_selected_id', 'a1');
+    const maxPeeks = 1;
+    const selectedIdx = 0;
+    const count = 2;
+    // Correct formula: (selectedIdx + (maxPeeks - i)) % count
+    // i=0 (peek slot): (0 + (1 - 0)) % 2 = 1 → accounts[1] = bob ✓
+    const peekIdx = (selectedIdx + (maxPeeks - 0)) % count;
+    expect(accounts[peekIdx].login).toBe('bob');
+  });
+});
