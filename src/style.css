@@ -474,29 +474,21 @@
 /* ─── Header toggle button ──────────────────────────────── */
 #headerToggleBtn {
   position: absolute;
-  top: 12px;
+  top: 2px;
   right: 16px;
-  padding: 6px 12px;
+  padding: 0 6px;
   border: none;
   background: transparent;
-  color: var(--text);
+  color: var(--muted);
   cursor: pointer;
   font-size: 13px;
-  font-weight: 500;
   white-space: nowrap;
   transition: color 0.15s;
-  z-index: 10;
+  z-index: 100;
 }
 
 #headerToggleBtn:hover {
   color: var(--blue);
-}
-
-#headerToggleBtn.floating {
-  position: absolute;
-  top: -44px;       /* Position above collapsed header */
-  right: 16px;
-  z-index: 10;
 }
 
 @keyframes accountsFadeIn {

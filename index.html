@@ -194,9 +194,6 @@ function getNextAccountId(currentId, direction) {
   const nextIdx = (idx + direction + accounts.length) % accounts.length;
   return accounts[nextIdx].id;
 }
-function _toggleBtnHtml() {
-  return `<button id="headerToggleBtn" onclick="toggleHeader()" title="Collapse header" aria-label="Collapse accounts header">Collapse header</button>`;
-}
 function renderAccountsHeader() {
   const container = document.getElementById("accountsHeader");
   if (!container) return;
@@ -204,7 +201,6 @@ function renderAccountsHeader() {
   if (!accounts.length) {
     _lastRenderedCount = 0;
     container.innerHTML = `
-      ${_toggleBtnHtml()}
       <div class="accounts-header-body">
         <div>
           <div class="fw-600 mb-3">GitHub Copilot Quota Planner</div>
@@ -231,7 +227,6 @@ function renderAccountsHeader() {
     ` : "";
     const accountsText = count === 1 ? "1 account connected" : `${count} accounts connected`;
     container.innerHTML = `
-      ${_toggleBtnHtml()}
       <div class="accounts-header-body">
         <div class="accounts-dynamic" id="accountsDynamic" style="width:${stackWidth}px">
           <div class="account-card-stack" id="cardStack">
@@ -264,13 +259,11 @@ function toggleHeader() {
   const isCollapsed = header.classList.contains("collapsed");
   if (isCollapsed) {
     header.classList.remove("collapsed");
-    btn.classList.remove("floating");
     btn.textContent = "Collapse header";
     btn.title = "Collapse header";
     localStorage.setItem("headerCollapsed", "false");
   } else {
     header.classList.add("collapsed");
-    btn.classList.add("floating");
     btn.textContent = "Expand header";
     btn.title = "Expand header";
     localStorage.setItem("headerCollapsed", "true");
@@ -283,7 +276,8 @@ function initHeaderCollapsed() {
   if (!header || !btn) return;
   header.classList.add("no-transition");
   header.classList.add("collapsed");
-  btn.classList.add("floating");
+  btn.textContent = "Expand header";
+  btn.title = "Expand header";
   requestAnimationFrame(() => {
     requestAnimationFrame(() => header.classList.remove("no-transition"));
   });
@@ -1650,29 +1644,21 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ─── Header toggle button ──────────────────────────────── */
 #headerToggleBtn {
   position: absolute;
-  top: 12px;
+  top: 2px;
   right: 16px;
-  padding: 6px 12px;
+  padding: 0 6px;
   border: none;
   background: transparent;
-  color: var(--text);
+  color: var(--muted);
   cursor: pointer;
   font-size: 13px;
-  font-weight: 500;
   white-space: nowrap;
   transition: color 0.15s;
-  z-index: 10;
+  z-index: 100;
 }
 
 #headerToggleBtn:hover {
   color: var(--blue);
-}
-
-#headerToggleBtn.floating {
-  position: absolute;
-  top: -44px;       /* Position above collapsed header */
-  right: 16px;
-  z-index: 10;
 }
 
 @keyframes accountsFadeIn {
@@ -1931,6 +1917,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </head>
 <body>
   <!-- ─── ACCOUNTS HEADER ──────────────────────────────── -->
+  <button id="headerToggleBtn" onclick="toggleHeader()" title="Collapse header" aria-label="Collapse accounts header">Collapse header</button>
   <div class="accounts-header mb16" id="accountsHeader">
     <!-- Populated by renderAccountsHeader() in accounts.js.            -->
     <!-- #accountsStatic: re-rendered only on account add/remove.       -->

@@ -184,10 +184,6 @@ export function showToast(msg, isError = false) {
   _toastTimer = setTimeout(() => el.classList.remove('toast-visible'), 3500);
 }
 
-function _toggleBtnHtml() {
-  return `<button id="headerToggleBtn" onclick="toggleHeader()" title="Collapse header" aria-label="Collapse accounts header">Collapse header</button>`;
-}
-
 export function renderAccountsHeader() {
   const container = document.getElementById('accountsHeader');
   if (!container) return;
@@ -197,7 +193,6 @@ export function renderAccountsHeader() {
   if (!accounts.length) {
     _lastRenderedCount = 0;
     container.innerHTML = `
-      ${_toggleBtnHtml()}
       <div class="accounts-header-body">
         <div>
           <div class="fw-600 mb-3">GitHub Copilot Quota Planner</div>
@@ -228,7 +223,6 @@ export function renderAccountsHeader() {
     const accountsText = count === 1 ? '1 account connected' : `${count} accounts connected`;
 
     container.innerHTML = `
-      ${_toggleBtnHtml()}
       <div class="accounts-header-body">
         <div class="accounts-dynamic" id="accountsDynamic" style="width:${stackWidth}px">
           <div class="account-card-stack" id="cardStack">
@@ -264,13 +258,11 @@ export function toggleHeader() {
   const isCollapsed = header.classList.contains('collapsed');
   if (isCollapsed) {
     header.classList.remove('collapsed');
-    btn.classList.remove('floating');
     btn.textContent = 'Collapse header';
     btn.title = 'Collapse header';
     localStorage.setItem('headerCollapsed', 'false');
   } else {
     header.classList.add('collapsed');
-    btn.classList.add('floating');
     btn.textContent = 'Expand header';
     btn.title = 'Expand header';
     localStorage.setItem('headerCollapsed', 'true');
@@ -285,7 +277,8 @@ export function initHeaderCollapsed() {
   // Apply without animation
   header.classList.add('no-transition');
   header.classList.add('collapsed');
-  btn.classList.add('floating');
+  btn.textContent = 'Expand header';
+  btn.title = 'Expand header';
   // Remove no-transition after one frame
   requestAnimationFrame(() => {
     requestAnimationFrame(() => header.classList.remove('no-transition'));
