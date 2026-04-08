@@ -669,6 +669,7 @@ function stepNum(id, delta, min, max) {
 }
 function syncUsage(val) {
   val = parseFloat(parseFloat(val).toFixed(1));
+  state.quotaRemaining = null;
   document.getElementById("usageInput").value = fmt1(val);
   document.getElementById("usageDisplay").textContent = fmt1(val) + "%";
   updateStatus();
@@ -676,6 +677,7 @@ function syncUsage(val) {
 function syncUsageFromInput(val) {
   val = parseFloat(parseFloat(val || 0).toFixed(1));
   val = Math.min(100, Math.max(0, val));
+  state.quotaRemaining = null;
   document.getElementById("usageSlider").value = val;
   document.getElementById("usageDisplay").textContent = fmt1(val) + "%";
   updateStatus();
@@ -1418,7 +1420,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .cal-day-name { text-align: center; font-size: 13px; color: var(--muted); padding: 6px 0; font-weight: 500; }
     .cal-cell { text-align: center; border-radius: 6px; padding: 9px 4px; font-size: 15px;
       cursor: pointer; transition: background 0.12s, color 0.12s; border: 1px solid transparent; }
-    .cal-cell:hover:not(.cal-empty):not(.cal-weekend-off) { background: rgba(56,139,253,0.15); border-color: rgba(56,139,253,0.4); }
+    .cal-cell:hover:not(.cal-empty):not(.cal-weekend-off):not(.cal-dayoff) { background: rgba(56,139,253,0.15); border-color: rgba(56,139,253,0.4); }
     .cal-cell.cal-empty { cursor: default; }
     .cal-cell.cal-today { border-color: var(--blue); color: var(--blue); font-weight: 600; }
     .cal-cell.cal-weekend { color: var(--muted); }
