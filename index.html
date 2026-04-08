@@ -53,6 +53,15 @@ function _setFetchStatus(msg, color) {
     el.style.color = color;
   }
 }
+const CARD_WIDTH = 280;
+const PEEK_OFFSET = 60;
+let _lastRenderedCount = -1;
+function _computeMaxPeeks(accountCount) {
+  var _a, _b;
+  const viewportWidth = ((_b = (_a = document.getElementById("accountsDynamic")) == null ? void 0 : _a.parentElement) == null ? void 0 : _b.offsetWidth) ?? window.innerWidth;
+  const spaceForPeeks = Math.floor((viewportWidth - 280 - 40) / 60);
+  return Math.min(accountCount - 1, 3, Math.max(0, spaceForPeeks));
+}
 const GH_ACCOUNTS_KEY = "gh_accounts";
 const GH_SELECTED_KEY = "gh_selected_id";
 function getAccounts() {
@@ -190,6 +199,7 @@ function renderAccountsHeader() {
   if (!container) return;
   const accounts = getAccounts();
   if (!accounts.length) {
+    _lastRenderedCount = 0;
     container.innerHTML = `
       <div class="accounts-header-body">
         <div>
@@ -206,61 +216,114 @@ function renderAccountsHeader() {
     return;
   }
   const count = accounts.length;
-  const multi = count > 1;
-  const selected = getSelectedAccount();
-  const selectedIdx = accounts.findIndex((a) => a.id === (selected == null ? void 0 : selected.id));
-  const peekAccounts = multi ? [
-    accounts[(selectedIdx + 1) % count],
-    count > 2 ? accounts[(selectedIdx + 2) % count] : null
-  ].filter(Boolean) : [];
-  const CARD_WIDTH = 280;
-  const PEEK_OFFSET = 40;
-  function cardHtml(account, role, leftPx) {
-    const removeBtn = role === "selected" && multi ? `
-      <button class="account-card-remove" onclick="removeAccountAndRender('${escHtml(account.id)}')" title="Remove account" aria-label="Remove ${escHtml(account.login)}">✕</button>
+  if (count !== _lastRenderedCount) {
+    _lastRenderedCount = count;
+    const multi = count > 1;
+    const maxPeeks2 = _computeMaxPeeks(count);
+    const stackWidth = CARD_WIDTH + maxPeeks2 * PEEK_OFFSET;
+    const arrowsHtml = multi ? `
+      <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
+      <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
     ` : "";
-    const planLabel = account.plan ? escHtml(account.plan) + " plan" : "plan unknown";
-    const avatarEl = account.avatar_url ? `<img src="${escHtml(account.avatar_url)}" alt="" class="account-card-avatar" loading="lazy" />` : `<div class="account-card-avatar-placeholder"></div>`;
-    return `
-      <div class="account-card ${role}" style="left:${leftPx}px">
-        ${avatarEl}
-        <div class="account-card-info">
-          <div class="account-card-login">@${escHtml(account.login)}</div>
-          <div class="account-card-plan">${planLabel}</div>
+    const countLabel = count === 1 ? "1 account connected" : `${count} accounts connected`;
+    container.innerHTML = `
+      <div class="accounts-header-body">
+        <div class="accounts-dynamic" id="accountsDynamic" style="width:${stackWidth}px">
+          <div class="account-card-stack" id="cardStack">
+            <div class="account-card" id="cardSlot-0" style="display:none"></div>
+            <div class="account-card" id="cardSlot-1" style="display:none"></div>
+            <div class="account-card" id="cardSlot-2" style="display:none"></div>
+            <div class="account-card" id="cardSlot-3" style="display:none"></div>
+          </div>
         </div>
-        ${removeBtn}
+        <div class="accounts-static" id="accountsStatic">
+          <div class="accounts-label">${countLabel}</div>
+          <div class="accounts-controls">
+            ${arrowsHtml}
+            <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
+            <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? "Sign out" : "Sign out all"}</button>
+          </div>
+        </div>
       </div>`;
   }
-  const peekCount = peekAccounts.length;
-  const stackWidth = CARD_WIDTH + peekCount * PEEK_OFFSET;
-  const peekHtml = peekAccounts.map((a, i) => {
-    const role = i === 0 ? "peek-1" : "peek-2";
-    const leftPx = (peekCount - 1 - i) * PEEK_OFFSET;
-    return cardHtml(a, role, leftPx);
-  }).join("");
-  const arrowsHtml = multi ? `
-    <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
-    <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
-  ` : "";
-  const countLabel = count === 1 ? "1 account connected" : `${count} accounts connected`;
-  const selectedLeftPx = peekCount * PEEK_OFFSET;
-  container.innerHTML = `
-    <div class="accounts-header-body">
-      <div class="accounts-dynamic" style="width:${stackWidth}px">
-        <div class="account-card-stack">
-          ${peekHtml}
-          ${selected ? cardHtml(selected, "selected", selectedLeftPx) : ""}
-        </div>
+  const maxPeeks = _computeMaxPeeks(count);
+  _updateCardSlots(false, null, maxPeeks);
+}
+function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
+  var _a;
+  const accounts = getAccounts();
+  const selected = getSelectedAccount();
+  if (!accounts.length || !selected) return;
+  for (let i = 0; i < 4; i++) {
+    const slot = document.getElementById(`cardSlot-${i}`);
+    if (slot) {
+      slot.classList.remove("entering", "exiting");
+    }
+  }
+  if (animate) {
+    void ((_a = document.getElementById("cardSlot-0")) == null ? void 0 : _a.offsetWidth);
+  }
+  const count = accounts.length;
+  const selectedIdx = accounts.findIndex((a) => a.id === selected.id);
+  const multi = count > 1;
+  const slotAccounts = [];
+  for (let i = 0; i <= maxPeeks; i++) {
+    if (i < maxPeeks) {
+      slotAccounts.push(accounts[(selectedIdx + maxPeeks + 1 - i) % count]);
+    } else {
+      slotAccounts.push(selected);
+    }
+  }
+  const roles = [];
+  for (let i = 0; i < maxPeeks; i++) {
+    roles.push(`peek-${maxPeeks - i}`);
+  }
+  roles.push("selected");
+  slotAccounts.forEach((account, i) => {
+    const slot = document.getElementById(`cardSlot-${i}`);
+    if (!slot) return;
+    if (!account) {
+      slot.style.display = "none";
+      slot.className = "account-card";
+      return;
+    }
+    slot.style.display = "";
+    slot.style.left = i * PEEK_OFFSET + "px";
+    const role = roles[i];
+    const isSelectedSlot = role === "selected";
+    const planLabel = account.plan ? escHtml(account.plan) + " plan" : "plan unknown";
+    const avatarEl = account.avatar_url ? `<img src="${escHtml(account.avatar_url)}" alt="" class="account-card-avatar" loading="lazy" />` : `<div class="account-card-avatar-placeholder"></div>`;
+    const removeBtn = isSelectedSlot && multi ? `<button class="account-card-remove" onclick="removeAccountAndRender('${escHtml(account.id)}')" title="Remove account" aria-label="Remove ${escHtml(account.login)}">✕</button>` : "";
+    slot.innerHTML = `
+      ${avatarEl}
+      <div class="account-card-info">
+        <div class="account-card-login">@${escHtml(account.login)}</div>
+        <div class="account-card-plan">${planLabel}</div>
       </div>
-      <div class="accounts-static">
-        <div class="accounts-label">${countLabel}</div>
-        <div class="accounts-controls">
-          ${arrowsHtml}
-          <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
-          <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? "Sign out" : "Sign out all"}</button>
-        </div>
-      </div>
-    </div>`;
+      ${removeBtn}`;
+    slot.className = `account-card ${role}`;
+    if (animate && isSelectedSlot) {
+      void slot.offsetWidth;
+      slot.classList.add("entering");
+      const cleanupEntering = () => slot.classList.remove("entering");
+      slot.addEventListener("animationend", cleanupEntering, { once: true });
+      setTimeout(cleanupEntering, 400);
+    }
+  });
+  if (animate && prevSelectedId) {
+    slotAccounts.forEach((account, i) => {
+      if ((account == null ? void 0 : account.id) === prevSelectedId) {
+        const slot = document.getElementById(`cardSlot-${i}`);
+        if (slot) {
+          void slot.offsetWidth;
+          slot.classList.add("exiting");
+          const cleanupExiting = () => slot.classList.remove("exiting");
+          slot.addEventListener("animationend", cleanupExiting, { once: true });
+          setTimeout(cleanupExiting, 400);
+        }
+      }
+    });
+  }
 }
 function openAccountsModal() {
   const content = document.getElementById("modalContent");
@@ -351,11 +414,20 @@ async function _submitTokens() {
   }
 }
 function navigateAccount(direction) {
+  if (![-1, 1].includes(direction)) {
+    console.warn(`navigateAccount: invalid direction "${direction}", expected -1 (previous) or 1 (next)`);
+    return;
+  }
   const current = getSelectedAccount();
   if (!current) return;
-  const nextId = getNextAccountId(current.id, direction);
-  if (!nextId || nextId === current.id) return;
-  window.dispatchEvent(new CustomEvent("account:switch-requested", { detail: { id: nextId, previousId: current.id } }));
+  const prevId = current.id;
+  const nextId = getNextAccountId(prevId, direction);
+  if (!nextId || nextId === prevId) return;
+  saveSelectedId(nextId);
+  const accounts = getAccounts();
+  const maxPeeks = _computeMaxPeeks(accounts.length);
+  _updateCardSlots(true, prevId, maxPeeks);
+  window.dispatchEvent(new CustomEvent("account:switch-requested", { detail: { id: nextId } }));
 }
 function removeAccountAndRender(id) {
   const wasSelected = getSelectedId() === id;
@@ -986,6 +1058,18 @@ function onMonthLenChange() {
   updateStatus();
 }
 document.addEventListener("DOMContentLoaded", () => {
+  if (new URLSearchParams(location.search).get("demo") === "1") {
+    localStorage.setItem("gh_accounts", JSON.stringify([
+      { id: "demo-1", token: "ghu_demo1_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-1", name: "Demo Account One", avatar_url: "", plan: "Individual", lastQuota: null },
+      { id: "demo-2", token: "ghu_demo2_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-2", name: "Demo Account Two", avatar_url: "", plan: "Teams", lastQuota: null },
+      { id: "demo-3", token: "ghu_demo3_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-3", name: "Demo Account Three", avatar_url: "", plan: "Business", lastQuota: null },
+      { id: "demo-4", token: "ghu_demo4_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-4", name: "Demo Account Four", avatar_url: "", plan: "Individual", lastQuota: null }
+    ]));
+    localStorage.setItem("gh_selected_id", "demo-1");
+    const clean = location.pathname + location.search.replace(/[?&]demo=1/, "");
+    window.location.replace(clean);
+    return;
+  }
   const now = /* @__PURE__ */ new Date();
   document.getElementById("dayInput").value = now.getDate();
   setCalView(now.getFullYear(), now.getMonth());
@@ -1512,12 +1596,22 @@ document.addEventListener("DOMContentLoaded", () => {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes accountsCardSlideIn {
+  from { opacity: 0; transform: translateX(-80px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes accountsCardSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(80px); }
+}
+
 .accounts-header-body {
   animation: accountsFadeIn 0.2s ease;
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -1594,11 +1688,22 @@ document.addEventListener("DOMContentLoaded", () => {
   z-index: 2;
   opacity: 0.67;
   pointer-events: none;
+  height: 52px; /* 4px smaller than 56px base */
 }
 
 .account-card.peek-2 {
   z-index: 1;
   opacity: 0.42;
+  pointer-events: none;
+  height: 48px; /* 4px smaller than peek-1 */
+}
+
+.account-card.entering {
+  animation: accountsCardSlideIn 0.35s ease forwards;
+}
+
+.account-card.exiting {
+  animation: accountsCardSlideOut 0.35s ease forwards;
   pointer-events: none;
 }
 
@@ -1719,7 +1824,9 @@ document.addEventListener("DOMContentLoaded", () => {
   </header>
   <!-- ─── ACCOUNTS HEADER ──────────────────────────────── -->
   <div class="accounts-header mb16" id="accountsHeader">
-    <!-- rendered by renderAccountsHeader() in accounts.js -->
+    <!-- Populated by renderAccountsHeader() in accounts.js.            -->
+    <!-- #accountsStatic: re-rendered only on account add/remove.       -->
+    <!-- #cardStack slots: persistent DOM, content swapped in-place.    -->
   </div>
 
   <!-- Calendar Popup -->

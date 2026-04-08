@@ -274,6 +274,12 @@ function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
     }
   }
 
+  // Force reflow to ensure browser has flushed style recalculation
+  // This breaks up the DOM mutation batch so CSS animations will trigger
+  if (animate) {
+    void document.getElementById('cardSlot-0')?.offsetWidth;
+  }
+
   const count = accounts.length;
   const selectedIdx = accounts.findIndex(a => a.id === selected.id);
   const multi = count > 1;
@@ -332,6 +338,9 @@ function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
 
     // Add animation only on selected slot when navigating
     if (animate && isSelectedSlot) {
+      // Force reflow to flush style recalculation before adding animation class
+      // This ensures CSS engine sees: no animation class → animation class transition
+      void slot.offsetWidth;
       slot.classList.add('entering');
       const cleanupEntering = () => slot.classList.remove('entering');
       slot.addEventListener('animationend', cleanupEntering, { once: true });
@@ -346,6 +355,8 @@ function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
       if (account?.id === prevSelectedId) {
         const slot = document.getElementById(`cardSlot-${i}`);
         if (slot) {
+          // Force reflow to flush style recalculation before adding animation class
+          void slot.offsetWidth;
           slot.classList.add('exiting');
           const cleanupExiting = () => slot.classList.remove('exiting');
           slot.addEventListener('animationend', cleanupExiting, { once: true });
