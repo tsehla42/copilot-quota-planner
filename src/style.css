@@ -548,7 +548,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: left 0.25s ease, top 0.25s ease;
+  transition: left 0.25s ease, top 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 
 .account-card.selected {
