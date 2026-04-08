@@ -250,6 +250,14 @@ function _updateCardSlots(animate, prevSelectedId = null) {
   const selected = getSelectedAccount();
   if (!accounts.length || !selected) return;
 
+  // Clean animation classes from all slots BEFORE updating
+  for (let i = 0; i < 3; i++) {
+    const slot = document.getElementById(`cardSlot-${i}`);
+    if (slot) {
+      slot.classList.remove('entering', 'exiting');
+    }
+  }
+
   const count = accounts.length;
   const selectedIdx = accounts.findIndex(a => a.id === selected.id);
   const multi = count > 1;
@@ -301,7 +309,10 @@ function _updateCardSlots(animate, prevSelectedId = null) {
     // Add animation only on selected slot when navigating
     if (animate && isSelectedSlot) {
       slot.classList.add('entering');
-      slot.addEventListener('animationend', () => slot.classList.remove('entering'), { once: true });
+      const cleanupEntering = () => slot.classList.remove('entering');
+      slot.addEventListener('animationend', cleanupEntering, { once: true });
+      // Fallback: remove entering class after 400ms if animationend doesn't fire
+      setTimeout(cleanupEntering, 400);
     }
   });
 
@@ -312,7 +323,10 @@ function _updateCardSlots(animate, prevSelectedId = null) {
         const slot = document.getElementById(`cardSlot-${i}`);
         if (slot) {
           slot.classList.add('exiting');
-          slot.addEventListener('animationend', () => slot.classList.remove('exiting'), { once: true });
+          const cleanupExiting = () => slot.classList.remove('exiting');
+          slot.addEventListener('animationend', cleanupExiting, { once: true });
+          // Fallback: remove exiting class after 400ms if animationend doesn't fire
+          setTimeout(cleanupExiting, 400);
         }
       }
     });
@@ -408,6 +422,12 @@ export async function _submitTokens() {
 }
 
 export function navigateAccount(direction) {
+  // Validate direction parameter
+  if (![-1, 1].includes(direction)) {
+    console.warn(`navigateAccount: invalid direction "${direction}", expected -1 (previous) or 1 (next)`);
+    return;
+  }
+
   const current = getSelectedAccount();
   if (!current) return;
   const prevId = current.id;
