@@ -185,30 +185,7 @@ export function showToast(msg, isError = false) {
 }
 
 function _toggleBtnHtml() {
-  const selected = getSelectedAccount();
-  const iconContent = (selected?.avatar_url)
-    ? `<img src="${escHtml(selected.avatar_url)}" alt="${escHtml(selected.login)}" loading="lazy" />`
-    : GITHUB_ICON;
-  return `<button id="headerToggleBtn" onclick="toggleHeader()" title="Toggle header" aria-label="Toggle accounts header">${iconContent}<span class="toggle-hint"></span></button>`;
-}
-
-function _syncToggleBtnIcon() {
-  const btn = document.getElementById('headerToggleBtn');
-  if (!btn) return;
-  const selected = getSelectedAccount();
-  // Preserve the .toggle-hint span, only replace the icon
-  const hint = btn.querySelector('.toggle-hint');
-  btn.innerHTML = '';
-  if (selected?.avatar_url) {
-    const img = document.createElement('img');
-    img.src = selected.avatar_url;
-    img.alt = selected.login || '';
-    img.loading = 'lazy';
-    btn.appendChild(img);
-  } else {
-    btn.insertAdjacentHTML('beforeend', GITHUB_ICON);
-  }
-  if (hint) btn.appendChild(hint);
+  return `<button id="headerToggleBtn" onclick="toggleHeader()" title="Collapse header" aria-label="Collapse accounts header">Collapse header</button>`;
 }
 
 export function renderAccountsHeader() {
@@ -429,7 +406,6 @@ function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
       }
     });
   }
-  _syncToggleBtnIcon();
 }
 
 export function openAccountsModal() {
