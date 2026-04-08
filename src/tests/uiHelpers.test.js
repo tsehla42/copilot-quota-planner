@@ -38,13 +38,6 @@ describe('fmtInt', () => {
   });
 });
 
-describe('barColor', () => {
-  it('green for < 60%', () => expect(barColor(59)).toBe('var(--accent-hover)'));
-  it('yellow for 60–79%', () => expect(barColor(70)).toBe('var(--yellow)'));
-  it('red for >= 80%', () => expect(barColor(80)).toBe('var(--red)'));
-  it('red for 100%', () => expect(barColor(100)).toBe('var(--red)'));
-});
-
 describe('stepNum', () => {
   beforeEach(() => {
     document.body.innerHTML = '<input type="number" id="testInput" value="5" />';

@@ -29,10 +29,20 @@ export function fmt1(n) { return n.toFixed(1); }
 export function fmt2(n) { return n.toFixed(2); }
 export function fmtInt(n) { return Math.floor(n).toLocaleString(); }
 
-export function barColor(percentage) {
-  if (percentage < 60) return 'var(--accent-hover)';
-  if (percentage < 80) return 'var(--yellow)';
-  return 'var(--red)';
+function _statusColor(paceStatus, remainingPct) {
+  switch (paceStatus) {
+    case 'under':
+    case 'onTrack':
+    case 'noUsage':
+      return 'var(--accent-hover)';  // green
+    case 'monthComplete':
+      return remainingPct === 0 ? 'var(--red)' : 'var(--accent-hover)';
+    case 'slightlyOver':
+      return 'var(--yellow)';
+    case 'over':
+    default:
+      return 'var(--red)';
+  }
 }
 
 export function stepNum(id, delta, min, max) {
@@ -86,7 +96,9 @@ export function updateStatus() {
   // Progress bar
   const bar = document.getElementById('progressBar');
   bar.style.width      = Math.min(100, usage) + '%';
-  bar.style.background = barColor(usage);
+  const statusColor = _statusColor(r.paceStatus, r.remainingPct);
+  bar.style.background = statusColor;
+  document.getElementById('statBudgetLeft').style.color = statusColor;
 
   if (requestMode) {
     document.getElementById('progressUsed').textContent   = r.usedRequests + ' used';
