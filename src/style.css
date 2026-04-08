@@ -556,6 +556,7 @@
   opacity: 1;
   background: var(--tag-bg);
   border-color: var(--border);
+  top: 0;
 }
 
 .account-card.peek-1 {
@@ -563,6 +564,7 @@
   opacity: 1;
   pointer-events: none;
   height: 52px;
+  top: 2px;
   background: color-mix(in srgb, var(--surface) 55%, var(--bg) 45%);
   border-color: color-mix(in srgb, var(--border) 50%, var(--bg) 50%);
 }
@@ -572,6 +574,7 @@
   opacity: 1;
   pointer-events: none;
   height: 48px;
+  top: 4px;
   background: color-mix(in srgb, var(--surface) 20%, var(--bg) 80%);
   border-color: color-mix(in srgb, var(--border) 25%, var(--bg) 75%);
 }
@@ -581,6 +584,7 @@
   opacity: 1;
   pointer-events: none;
   height: 44px;
+  top: 6px;
   background: color-mix(in srgb, var(--surface) 8%, var(--bg) 92%);
   border-color: color-mix(in srgb, var(--border) 12%, var(--bg) 88%);
 }
