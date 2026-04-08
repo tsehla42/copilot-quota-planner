@@ -548,7 +548,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: left 0.25s ease, opacity 0.25s ease;
+  transition: left 0.25s ease, top 0.25s ease;
 }
 
 .account-card.selected {
@@ -560,16 +560,29 @@
 
 .account-card.peek-1 {
   z-index: 2;
-  opacity: 0.67;
+  opacity: 1;
   pointer-events: none;
-  height: 52px; /* 4px smaller than 56px base */
+  height: 52px;
+  background: color-mix(in srgb, var(--surface) 55%, var(--bg) 45%);
+  border-color: color-mix(in srgb, var(--border) 50%, var(--bg) 50%);
 }
 
 .account-card.peek-2 {
   z-index: 1;
-  opacity: 0.42;
+  opacity: 1;
   pointer-events: none;
-  height: 48px; /* 4px smaller than peek-1 */
+  height: 48px;
+  background: color-mix(in srgb, var(--surface) 20%, var(--bg) 80%);
+  border-color: color-mix(in srgb, var(--border) 25%, var(--bg) 75%);
+}
+
+.account-card.peek-3 {
+  z-index: 0;
+  opacity: 1;
+  pointer-events: none;
+  height: 44px;
+  background: color-mix(in srgb, var(--surface) 8%, var(--bg) 92%);
+  border-color: color-mix(in srgb, var(--border) 12%, var(--bg) 88%);
 }
 
 .account-card.entering {
