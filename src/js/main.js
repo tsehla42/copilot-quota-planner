@@ -137,6 +137,22 @@ function onMonthLenChange() {
 
 // ─── Initialization ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // DEMO_ONLY: Pre-populate 4 fake accounts for testing via ?demo=1
+  // Remove this entire block (and the DEMO_ONLY comment) before final release.
+  if (new URLSearchParams(location.search).get('demo') === '1') {
+    localStorage.setItem('gh_accounts', JSON.stringify([
+      { id: 'demo-1', token: 'ghu_demo1_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-1', name: 'Demo Account One',   avatar_url: '', plan: 'Individual', lastQuota: null },
+      { id: 'demo-2', token: 'ghu_demo2_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-2', name: 'Demo Account Two',   avatar_url: '', plan: 'Teams',      lastQuota: null },
+      { id: 'demo-3', token: 'ghu_demo3_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-3', name: 'Demo Account Three', avatar_url: '', plan: 'Business',   lastQuota: null },
+      { id: 'demo-4', token: 'ghu_demo4_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-4', name: 'Demo Account Four',  avatar_url: '', plan: 'Individual', lastQuota: null },
+    ]));
+    localStorage.setItem('gh_selected_id', 'demo-1');
+    const clean = location.pathname + location.search.replace(/[?&]demo=1/, '');
+    window.location.replace(clean);
+    return; // halt DOMContentLoaded — page will reload immediately
+  }
+  // END DEMO_ONLY
+
   // Set today's date
   const now = new Date();
   document.getElementById('dayInput').value = now.getDate();
