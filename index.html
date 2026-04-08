@@ -1646,70 +1646,22 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ─── Header toggle button ──────────────────────────────── */
 #headerToggleBtn {
   position: absolute;
-  top: 8px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--tag-bg);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  z-index: 10;
-  padding: 0;
-}
-#headerToggleBtn:hover {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(56,139,253,0.15);
-}
-#headerToggleBtn img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-#headerToggleBtn svg {
-  color: var(--muted);
-  width: 18px;
-  height: 18px;
-}
-#headerToggleBtn .toggle-hint {
-  position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--tag-bg);
-  border: 1px solid var(--border);
-  font-size: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  opacity: 0;
-  transition: opacity 0.15s;
-  pointer-events: none;
-  line-height: 1;
-}
-#headerToggleBtn:hover .toggle-hint { opacity: 1; }
-
-/* Floating state (when header is collapsed) */
-#headerToggleBtn.floating {
-  position: fixed;
-  top: 16px;
+  top: 12px;
   right: 16px;
-  z-index: 200;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s;
+  z-index: 10;
 }
-#headerToggleBtn.floating .toggle-hint::before {
-  content: '▲';
-}
-#headerToggleBtn:not(.floating) .toggle-hint::before {
-  content: '▼';
+
+#headerToggleBtn:hover {
+  color: var(--blue);
 }
 
 @keyframes accountsFadeIn {
