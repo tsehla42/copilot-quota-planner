@@ -203,7 +203,7 @@ function renderAccountsHeader() {
     container.innerHTML = `
       <div class="accounts-header-body">
         <div>
-          <div class="fw-600 mb-3">Connect GitHub token (optional)</div>
+          <div class="fw-600 mb-3">GitHub Copilot Quota Planner</div>
           <div class="fs-12 muted">Add a token to auto-fetch your quota from GitHub.</div>
         </div>
         <div>
@@ -225,7 +225,8 @@ function renderAccountsHeader() {
       <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
       <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
     ` : "";
-    const countLabel = count === 1 ? "1 account connected" : `${count} accounts connected`;
+    const accountsText = count === 1 ? "1 account connected" : `${count} accounts connected`;
+    const countLabel = `GitHub Copilot Quota Planner — ${accountsText}`;
     container.innerHTML = `
       <div class="accounts-header-body">
         <div class="accounts-dynamic" id="accountsDynamic" style="width:${stackWidth}px">
@@ -724,10 +725,20 @@ function fmt2(n) {
 function fmtInt(n) {
   return Math.floor(n).toLocaleString();
 }
-function barColor(percentage) {
-  if (percentage < 60) return "var(--accent-hover)";
-  if (percentage < 80) return "var(--yellow)";
-  return "var(--red)";
+function _statusColor(paceStatus, remainingPct) {
+  switch (paceStatus) {
+    case "under":
+    case "onTrack":
+    case "noUsage":
+      return "var(--accent-hover)";
+    case "monthComplete":
+      return remainingPct === 0 ? "var(--red)" : "var(--accent-hover)";
+    case "slightlyOver":
+      return "var(--yellow)";
+    case "over":
+    default:
+      return "var(--red)";
+  }
 }
 function stepNum(id, delta, min, max) {
   const inputEl = document.getElementById(id);
@@ -775,7 +786,9 @@ function updateStatus() {
   const entitlement = state.quotaEntitlement || 300;
   const bar = document.getElementById("progressBar");
   bar.style.width = Math.min(100, usage) + "%";
-  bar.style.background = barColor(usage);
+  const statusColor = _statusColor(r.paceStatus, r.remainingPct);
+  bar.style.background = statusColor;
+  document.getElementById("statBudgetLeft").style.color = statusColor;
   if (requestMode) {
     document.getElementById("progressUsed").textContent = r.usedRequests + " used";
     document.getElementById("progressRemain").textContent = r.remainingRequests + " remaining";
@@ -1146,20 +1159,7 @@ document.addEventListener("DOMContentLoaded", () => {
       padding: 24px 16px 60px;
     }
 
-    .site-header {
-      background: var(--bg);
-      padding: 8px 16px;
-      margin: -24px -16px 16px;
-      display: flex;
-      align-items: center;
-    }
 
-    .site-header-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-      letter-spacing: 0.01em;
-    }
 
     .subtitle {
       color: var(--muted);
@@ -1626,12 +1626,11 @@ document.addEventListener("DOMContentLoaded", () => {
 }
 
 .accounts-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-}
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.01em;
+      text-transform: none;
 
 .accounts-controls {
   display: flex;
@@ -1819,9 +1818,6 @@ document.addEventListener("DOMContentLoaded", () => {
 }</style>
 </head>
 <body>
-  <header class="site-header">
-      <h1 class="site-header-title">GitHub Copilot Quota Planner</h1>
-  </header>
   <!-- ─── ACCOUNTS HEADER ──────────────────────────────── -->
   <div class="accounts-header mb16" id="accountsHeader">
     <!-- Populated by renderAccountsHeader() in accounts.js.            -->
@@ -1885,14 +1881,14 @@ document.addEventListener("DOMContentLoaded", () => {
           oninput="syncUsageFromInput(this.value)" />
         <div class="num-spin-dual">
           <div class="num-spin-group">
-            <div class="spin-label">±0.1</div>
-            <button onclick="stepNum('usageInput',0.1,0,100)" title="+0.1%">▲</button>
-            <button onclick="stepNum('usageInput',-0.1,0,100)" title="-0.1%">▼</button>
-          </div>
-          <div class="num-spin-group">
             <div class="spin-label">±1</div>
             <button onclick="stepNum('usageInput',1,0,100)" title="+1%">▲</button>
             <button onclick="stepNum('usageInput',-1,0,100)" title="-1%">▼</button>
+          </div>
+          <div class="num-spin-group">
+            <div class="spin-label">±0.1</div>
+            <button onclick="stepNum('usageInput',0.1,0,100)" title="+0.1%">▲</button>
+            <button onclick="stepNum('usageInput',-0.1,0,100)" title="-0.1%">▼</button>
           </div>
         </div>
       </div>
@@ -1964,7 +1960,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="label">days remaining</div>
         </div>
         <div class="stat">
-          <div class="value green" id="statBudgetLeft">40.6%</div>
+          <div class="value" id="statBudgetLeft">40.6%</div>
           <div class="label" id="statBudgetLeftLabel">quota remaining</div>
         </div>
         <div class="stat">
@@ -1991,7 +1987,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <div class="mt-14">
-        <div class="fs-12 muted mb-6">PROJECTED END-OF-MONTH</div>
+        <label>PROJECTED END-OF-MONTH</label>
         <div id="projectionLine" class="lh-15"></div>
       </div>
     </div>

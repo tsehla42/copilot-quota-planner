@@ -195,7 +195,7 @@ export function renderAccountsHeader() {
     container.innerHTML = `
       <div class="accounts-header-body">
         <div>
-          <div class="fw-600 mb-3">Connect GitHub token (optional)</div>
+          <div class="fw-600 mb-3">GitHub Copilot Quota Planner</div>
           <div class="fs-12 muted">Add a token to auto-fetch your quota from GitHub.</div>
         </div>
         <div>
@@ -220,7 +220,7 @@ export function renderAccountsHeader() {
       <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
       <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
     ` : '';
-    const countLabel = count === 1 ? '1 account connected' : `${count} accounts connected`;
+    const accountsText = count === 1 ? '1 account connected' : `${count} accounts connected`;
 
     container.innerHTML = `
       <div class="accounts-header-body">
@@ -233,7 +233,10 @@ export function renderAccountsHeader() {
           </div>
         </div>
         <div class="accounts-static" id="accountsStatic">
-          <div class="accounts-label">${countLabel}</div>
+          <div class="d-flex align-center gap-10">
+            <div class="header-label">GitHub Copilot Quota Planner </div>
+            <div class="accounts-label">${accountsText}</div>
+          </div>
           <div class="accounts-controls">
             ${arrowsHtml}
             <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>

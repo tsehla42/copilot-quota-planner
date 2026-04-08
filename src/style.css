@@ -23,20 +23,7 @@
       padding: 24px 16px 60px;
     }
 
-    .site-header {
-      background: var(--bg);
-      padding: 8px 16px;
-      margin: -24px -16px 16px;
-      display: flex;
-      align-items: center;
-    }
 
-    .site-header-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-      letter-spacing: 0.01em;
-    }
 
     .subtitle {
       color: var(--muted);
@@ -453,8 +440,6 @@
     .fs-18    { font-size: 18px; }
     .avatar { width:32px; height:32px; border-radius:50%; border:2px solid var(--border); display:block; }
     .proj-value { font-size: 22px; font-weight: 700; line-height: 1.5; }
-    
-    #projectionLine { text-align: center; }
 
 /* ─── Accounts Header ──────────────────────────────────── */
 .accounts-header {
@@ -504,7 +489,17 @@
   flex: 1;
 }
 
+.header-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
 .accounts-label {
+  display: flex;
+  align-items: center;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
