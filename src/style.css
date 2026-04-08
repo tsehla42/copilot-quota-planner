@@ -473,6 +473,16 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes accountsCardSlideIn {
+  from { opacity: 0; transform: translateX(-80px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes accountsCardSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(80px); }
+}
+
 .accounts-header-body {
   animation: accountsFadeIn 0.2s ease;
   width: 100%;
@@ -555,11 +565,22 @@
   z-index: 2;
   opacity: 0.67;
   pointer-events: none;
+  height: 52px; /* 4px smaller than 56px base */
 }
 
 .account-card.peek-2 {
   z-index: 1;
   opacity: 0.42;
+  pointer-events: none;
+  height: 48px; /* 4px smaller than peek-1 */
+}
+
+.account-card.entering {
+  animation: accountsCardSlideIn 0.35s ease forwards;
+}
+
+.account-card.exiting {
+  animation: accountsCardSlideOut 0.35s ease forwards;
   pointer-events: none;
 }
 

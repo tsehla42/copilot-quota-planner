@@ -1,5 +1,9 @@
 import { GH_API, escHtml, GITHUB_ICON } from './auth.js';
 
+const CARD_WIDTH  = 280;
+const PEEK_OFFSET = 40;
+let _lastRenderedCount = -1;
+
 export const GH_ACCOUNTS_KEY  = 'gh_accounts';
 export const GH_SELECTED_KEY  = 'gh_selected_id';
 
@@ -173,7 +177,9 @@ export function renderAccountsHeader() {
   if (!container) return;
   const accounts = getAccounts();
 
+  // Zero-accounts state: full replace
   if (!accounts.length) {
+    _lastRenderedCount = 0;
     container.innerHTML = `
       <div class="accounts-header-body">
         <div>
@@ -191,76 +197,126 @@ export function renderAccountsHeader() {
   }
 
   const count = accounts.length;
-  const multi = count > 1;
-  const selected = getSelectedAccount();
 
-  const selectedIdx = accounts.findIndex(a => a.id === selected?.id);
-  const peekAccounts = multi
-    ? [
-        accounts[(selectedIdx + 1) % count],
-        count > 2 ? accounts[(selectedIdx + 2) % count] : null,
-      ].filter(Boolean)
-    : [];
-
-  const CARD_WIDTH  = 280;
-  const PEEK_OFFSET = 40;
-
-  function cardHtml(account, role, leftPx) {
-    const removeBtn = (role === 'selected' && multi) ? `
-      <button class="account-card-remove" onclick="removeAccountAndRender('${escHtml(account.id)}')" title="Remove account" aria-label="Remove ${escHtml(account.login)}">✕</button>
+  // Rebuild full structure only when account count changes
+  if (count !== _lastRenderedCount) {
+    _lastRenderedCount = count;
+    const multi = count > 1;
+    const peekCount = Math.min(count - 1, 2);
+    const stackWidth = CARD_WIDTH + peekCount * PEEK_OFFSET;
+    const arrowsHtml = multi ? `
+      <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
+      <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
     ` : '';
+    const countLabel = count === 1 ? '1 account connected' : `${count} accounts connected`;
+
+    container.innerHTML = `
+      <div class="accounts-header-body">
+        <div class="accounts-dynamic" id="accountsDynamic" style="width:${stackWidth}px">
+          <div class="account-card-stack" id="cardStack">
+            <div class="account-card" id="cardSlot-0" style="display:none"></div>
+            <div class="account-card" id="cardSlot-1" style="display:none"></div>
+            <div class="account-card" id="cardSlot-2" style="display:none"></div>
+          </div>
+        </div>
+        <div class="accounts-static" id="accountsStatic">
+          <div class="accounts-label">${countLabel}</div>
+          <div class="accounts-controls">
+            ${arrowsHtml}
+            <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
+            <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? 'Sign out' : 'Sign out all'}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Always update card slots in-place (no animation on initial/count-change render)
+  _updateCardSlots(false);
+}
+
+/**
+ * Update the 3 persistent card slots in-place.
+ *
+ * Slot layout (back to front):
+ *   slot-0 = peek-2 (furthest back)
+ *   slot-1 = peek-1 (one behind)
+ *   slot-2 = selected
+ *
+ * @param {boolean} animate if true, add .entering to selected slot and .exiting to old selected
+ * @param {string|null} prevSelectedId ID of old selected account (for exit animation)
+ */
+function _updateCardSlots(animate, prevSelectedId = null) {
+  const accounts = getAccounts();
+  const selected = getSelectedAccount();
+  if (!accounts.length || !selected) return;
+
+  const count = accounts.length;
+  const selectedIdx = accounts.findIndex(a => a.id === selected.id);
+  const multi = count > 1;
+
+  // Determine which accounts occupy which slots (back to front)
+  const slotAccounts = [
+    count >= 3 ? accounts[(selectedIdx + 2) % count] : null,
+    count >= 2 ? accounts[(selectedIdx + 1) % count] : null,
+    selected,
+  ];
+
+  const peekCount = Math.min(count - 1, 2);
+  const roles = ['peek-2', 'peek-1', 'selected'];
+  const leftPositions = [0, PEEK_OFFSET, peekCount * PEEK_OFFSET];
+
+  slotAccounts.forEach((account, i) => {
+    const slot = document.getElementById(`cardSlot-${i}`);
+    if (!slot) return;
+
+    if (!account) {
+      slot.style.display = 'none';
+      slot.className = 'account-card';
+      return;
+    }
+
+    slot.style.display = '';
+    slot.style.left = leftPositions[i] + 'px';
+
+    const role = roles[i];
+    const isSelectedSlot = role === 'selected';
     const planLabel = account.plan ? escHtml(account.plan) + ' plan' : 'plan unknown';
     const avatarEl = account.avatar_url
       ? `<img src="${escHtml(account.avatar_url)}" alt="" class="account-card-avatar" loading="lazy" />`
       : `<div class="account-card-avatar-placeholder"></div>`;
-    return `
-      <div class="account-card ${role}" style="left:${leftPx}px">
-        ${avatarEl}
-        <div class="account-card-info">
-          <div class="account-card-login">@${escHtml(account.login)}</div>
-          <div class="account-card-plan">${planLabel}</div>
-        </div>
-        ${removeBtn}
-      </div>`;
+    const removeBtn = (isSelectedSlot && multi)
+      ? `<button class="account-card-remove" onclick="removeAccountAndRender('${escHtml(account.id)}')" title="Remove account" aria-label="Remove ${escHtml(account.login)}">✕</button>`
+      : '';
+
+    slot.innerHTML = `
+      ${avatarEl}
+      <div class="account-card-info">
+        <div class="account-card-login">@${escHtml(account.login)}</div>
+        <div class="account-card-plan">${planLabel}</div>
+      </div>
+      ${removeBtn}`;
+
+    slot.className = `account-card ${role}`;
+
+    // Add animation only on selected slot when navigating
+    if (animate && isSelectedSlot) {
+      slot.classList.add('entering');
+      slot.addEventListener('animationend', () => slot.classList.remove('entering'), { once: true });
+    }
+  });
+
+  // Animate old selected slot out
+  if (animate && prevSelectedId) {
+    slotAccounts.forEach((account, i) => {
+      if (account?.id === prevSelectedId) {
+        const slot = document.getElementById(`cardSlot-${i}`);
+        if (slot) {
+          slot.classList.add('exiting');
+          slot.addEventListener('animationend', () => slot.classList.remove('exiting'), { once: true });
+        }
+      }
+    });
   }
-
-  const peekCount  = peekAccounts.length;
-  const stackWidth = CARD_WIDTH + peekCount * PEEK_OFFSET;
-
-  const peekHtml = peekAccounts
-    .map((a, i) => {
-      const role   = i === 0 ? 'peek-1' : 'peek-2';
-      const leftPx = (peekCount - 1 - i) * PEEK_OFFSET;
-      return cardHtml(a, role, leftPx);
-    })
-    .join('');
-
-  const arrowsHtml = multi ? `
-    <button class="nav-arrow" onclick="navigateAccount(-1)" title="Previous account">←</button>
-    <button class="nav-arrow" onclick="navigateAccount(1)" title="Next account">→</button>
-  ` : '';
-
-  const countLabel = count === 1 ? '1 account connected' : `${count} accounts connected`;
-
-  const selectedLeftPx = peekCount * PEEK_OFFSET;
-
-  container.innerHTML = `
-    <div class="accounts-header-body">
-      <div class="accounts-dynamic" style="width:${stackWidth}px">
-        <div class="account-card-stack">
-          ${peekHtml}
-          ${selected ? cardHtml(selected, 'selected', selectedLeftPx) : ''}
-        </div>
-      </div>
-      <div class="accounts-static">
-        <div class="accounts-label">${countLabel}</div>
-        <div class="accounts-controls">
-          ${arrowsHtml}
-          <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
-          <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? 'Sign out' : 'Sign out all'}</button>
-        </div>
-      </div>
-    </div>`;
 }
 
 export function openAccountsModal() {
@@ -354,9 +410,14 @@ export async function _submitTokens() {
 export function navigateAccount(direction) {
   const current = getSelectedAccount();
   if (!current) return;
-  const nextId = getNextAccountId(current.id, direction);
-  if (!nextId || nextId === current.id) return;
-  window.dispatchEvent(new CustomEvent('account:switch-requested', { detail: { id: nextId, previousId: current.id } }));
+  const prevId = current.id;
+  const nextId = getNextAccountId(prevId, direction);
+  if (!nextId || nextId === prevId) return;
+  saveSelectedId(nextId);
+  // Animate the card slots
+  _updateCardSlots(true, prevId);
+  // Dispatch event so main.js loads cached quota
+  window.dispatchEvent(new CustomEvent('account:switch-requested', { detail: { id: nextId } }));
 }
 
 export function removeAccountAndRender(id) {
