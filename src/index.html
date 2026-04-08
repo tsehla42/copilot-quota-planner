@@ -73,14 +73,14 @@
           oninput="syncUsageFromInput(this.value)" />
         <div class="num-spin-dual">
           <div class="num-spin-group">
-            <div class="spin-label">±0.1</div>
-            <button onclick="stepNum('usageInput',0.1,0,100)" title="+0.1%">▲</button>
-            <button onclick="stepNum('usageInput',-0.1,0,100)" title="-0.1%">▼</button>
-          </div>
-          <div class="num-spin-group">
             <div class="spin-label">±1</div>
             <button onclick="stepNum('usageInput',1,0,100)" title="+1%">▲</button>
             <button onclick="stepNum('usageInput',-1,0,100)" title="-1%">▼</button>
+          </div>
+          <div class="num-spin-group">
+            <div class="spin-label">±0.1</div>
+            <button onclick="stepNum('usageInput',0.1,0,100)" title="+0.1%">▲</button>
+            <button onclick="stepNum('usageInput',-0.1,0,100)" title="-0.1%">▼</button>
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@
       </div>
 
       <div class="mt-14">
-        <div class="fs-12 muted mb-6">PROJECTED END-OF-MONTH</div>
+        <label>PROJECTED END-OF-MONTH</label>
         <div id="projectionLine" class="lh-15"></div>
       </div>
     </div>
