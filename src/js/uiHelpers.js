@@ -50,6 +50,7 @@ export function stepNum(id, delta, min, max) {
 
 export function syncUsage(val) {
   val = parseFloat(parseFloat(val).toFixed(1));
+  state.quotaRemaining = null;
   document.getElementById('usageInput').value = fmt1(val);
   document.getElementById('usageDisplay').textContent = fmt1(val) + '%';
   updateStatus();
@@ -58,6 +59,7 @@ export function syncUsage(val) {
 export function syncUsageFromInput(val) {
   val = parseFloat(parseFloat(val || 0).toFixed(1));
   val = Math.min(100, Math.max(0, val));
+  state.quotaRemaining = null;
   document.getElementById('usageSlider').value = val;
   document.getElementById('usageDisplay').textContent = fmt1(val) + '%';
   updateStatus();
