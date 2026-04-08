@@ -7,6 +7,12 @@ Without Copilot it wouldn't be possible and to be honest wouldn't make any sense
 
 But that a philosophycal question.
 
+The project deliberately uses plain JavaScript and the production `index.html` file is not minified. This is intentional for transparency. You can review the generated file yourself or drop it into your agent to look for potential vulnerabilities.
+
+Below is a generated description of what it does and how to use it.
+
+---
+
 An interactive calculator for tracking your [GitHub Copilot](https://github.com/features/copilot) premium request quota. See how fast you're burning through your monthly budget, project how much you'll use by end of month, and figure out how many AI requests you can make each day.
 
 No server. No install. Just open `index.html` in your browser.
