@@ -453,6 +453,8 @@
     .fs-18    { font-size: 18px; }
     .avatar { width:32px; height:32px; border-radius:50%; border:2px solid var(--border); display:block; }
     .proj-value { font-size: 22px; font-weight: 700; line-height: 1.5; }
+    
+    #projectionLine { text-align: center; }
 
 /* ─── Accounts Header ──────────────────────────────────── */
 .accounts-header {
