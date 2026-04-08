@@ -352,7 +352,6 @@ describe('getNextAccountId', () => {
 });
 
 describe('peek card account assignment', () => {
-  // _updateCardSlots is private — verify the slot-index formula directly
   it('peek-1 shows the OTHER account with 2 accounts', () => {
     const accounts = [
       { id: 'a1', login: 'alice' },

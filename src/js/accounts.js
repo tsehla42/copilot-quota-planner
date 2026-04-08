@@ -201,8 +201,8 @@ function _syncToggleBtnIcon() {
   btn.innerHTML = '';
   if (selected?.avatar_url) {
     const img = document.createElement('img');
-    img.src = escHtml(selected.avatar_url);
-    img.alt = escHtml(selected.login);
+    img.src = selected.avatar_url;
+    img.alt = selected.login || '';
     img.loading = 'lazy';
     btn.appendChild(img);
   } else {

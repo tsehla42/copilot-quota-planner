@@ -168,9 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Migrate legacy gh_token / gh_user keys if present
   migrateFromLegacy();
 
-  // Restore header collapsed state
-  initHeaderCollapsed();
-
   // Close popups on Escape
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
@@ -222,6 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAllMonths();
   updateStatus();
   renderAccountsHeader();
+  // Restore header collapsed state (must be after renderAccountsHeader creates #headerToggleBtn)
+  initHeaderCollapsed();
   // Auto-fetch on load (silent) if token saved
   fetchRealUsage().catch(() => {});
 });
