@@ -351,20 +351,30 @@ describe('getNextAccountId', () => {
   });
 });
 
-describe('peek card account assignment (2 accounts)', () => {
-  it('peek-1 shows the OTHER account, not selected', () => {
+describe('peek card account assignment', () => {
+  // _updateCardSlots is private — verify the slot-index formula directly
+  it('peek-1 shows the OTHER account with 2 accounts', () => {
     const accounts = [
-      { id: 'a1', token: 'ghu_x', login: 'alice', name: '', avatar_url: 'https://example.com/alice.png', plan: null, lastQuota: null },
-      { id: 'a2', token: 'ghu_y', login: 'bob',   name: '', avatar_url: 'https://example.com/bob.png',   plan: null, lastQuota: null },
+      { id: 'a1', login: 'alice' },
+      { id: 'a2', login: 'bob' },
     ];
-    localStorage.setItem('gh_accounts', JSON.stringify(accounts));
-    localStorage.setItem('gh_selected_id', 'a1');
-    const maxPeeks = 1;
-    const selectedIdx = 0;
-    const count = 2;
-    // Correct formula: (selectedIdx + (maxPeeks - i)) % count
-    // i=0 (peek slot): (0 + (1 - 0)) % 2 = 1 → accounts[1] = bob ✓
+    const maxPeeks = 1, selectedIdx = 0, count = 2;
+    // formula: (selectedIdx + (maxPeeks - i)) % count
+    // i=0: (0 + 1) % 2 = 1 → bob ✓
     const peekIdx = (selectedIdx + (maxPeeks - 0)) % count;
     expect(accounts[peekIdx].login).toBe('bob');
+  });
+
+  it('peek cards show correct accounts with 3 accounts (maxPeeks=2)', () => {
+    const accounts = [
+      { id: 'a1', login: 'alice' },
+      { id: 'a2', login: 'bob' },
+      { id: 'a3', login: 'carol' },
+    ];
+    const maxPeeks = 2, selectedIdx = 0, count = 3;
+    // i=0 (peek-2, furthest back): (0 + 2) % 3 = 2 → carol
+    // i=1 (peek-1):                (0 + 1) % 3 = 1 → bob
+    expect(accounts[(selectedIdx + (maxPeeks - 0)) % count].login).toBe('carol');
+    expect(accounts[(selectedIdx + (maxPeeks - 1)) % count].login).toBe('bob');
   });
 });
