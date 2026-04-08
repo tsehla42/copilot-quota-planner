@@ -492,6 +492,13 @@
   color: var(--blue);
 }
 
+#headerToggleBtn.floating {
+  position: absolute;
+  top: -44px;       /* Position above collapsed header */
+  right: 16px;
+  z-index: 10;
+}
+
 @keyframes accountsFadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }

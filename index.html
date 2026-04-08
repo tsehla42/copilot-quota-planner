@@ -265,10 +265,14 @@ function toggleHeader() {
   if (isCollapsed) {
     header.classList.remove("collapsed");
     btn.classList.remove("floating");
+    btn.textContent = "Collapse header";
+    btn.title = "Collapse header";
     localStorage.setItem("headerCollapsed", "false");
   } else {
     header.classList.add("collapsed");
     btn.classList.add("floating");
+    btn.textContent = "Expand header";
+    btn.title = "Expand header";
     localStorage.setItem("headerCollapsed", "true");
   }
 }
@@ -1662,6 +1666,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 #headerToggleBtn:hover {
   color: var(--blue);
+}
+
+#headerToggleBtn.floating {
+  position: absolute;
+  top: -44px;       /* Position above collapsed header */
+  right: 16px;
+  z-index: 10;
 }
 
 @keyframes accountsFadeIn {

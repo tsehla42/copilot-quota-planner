@@ -265,10 +265,14 @@ export function toggleHeader() {
   if (isCollapsed) {
     header.classList.remove('collapsed');
     btn.classList.remove('floating');
+    btn.textContent = 'Collapse header';
+    btn.title = 'Collapse header';
     localStorage.setItem('headerCollapsed', 'false');
   } else {
     header.classList.add('collapsed');
     btn.classList.add('floating');
+    btn.textContent = 'Expand header';
+    btn.title = 'Expand header';
     localStorage.setItem('headerCollapsed', 'true');
   }
 }
