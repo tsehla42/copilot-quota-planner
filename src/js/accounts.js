@@ -1,4 +1,5 @@
-import { GH_API, escHtml, GITHUB_ICON } from './auth.js';
+import { GH_API, escHtml } from './auth.js';
+import { GITHUB_ICON } from './icons.js';
 
 const CARD_WIDTH  = 280;
 const PEEK_OFFSET = 60;

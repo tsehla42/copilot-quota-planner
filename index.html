@@ -42,7 +42,6 @@
   }
 })();
 const GH_API = "https://api.github.com";
-const GITHUB_ICON = `<svg height="15" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
 function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -53,6 +52,9 @@ function _setFetchStatus(msg, color) {
     el.style.color = color;
   }
 }
+const GITHUB_ICON = `<svg height="15" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
+const CALENDAR_ICON = `<svg height="28" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M16.16649373,35.95938134c.77316329.64785493,1.60795774.94471846,3.48263807.94471781l.43676056-.00000033c1.54603625,0,2.79934626-1.25331001,2.79934626-2.79934626v-.0000056c0-1.54603625-1.25331001-2.79934626-2.79934626-2.79934626"/><path d="M16.16523863,26.63956433c.77489281-.64578528,1.61047805-.94041561,3.48515168-.9354023l.43550206.00254055c1.54603625,0,2.79934626,1.25331001,2.79934626,2.79934626v.0000056c0,1.54603625-1.25331001,2.79934626-2.79934626,2.79934626"/><line x1="17.93407413" y1="31.3054007" x2="20.08589236" y2="31.3054007"/><line x1="27.03476137" y1="27.15447771" x2="29.83476137" y2="25.61447985"/><line x1="29.83476137" y1="25.61447985" x2="29.83476137" y2="36.81447985"/><path d="M11.53207111,9.56735587h24.93585777c2.209139,0,4,1.790861,4,4v24.93264198c0,2.209139-1.790861,4-4,4H11.53207111c-2.209139,0-4-1.790861-4-4V13.56735587c0-2.209139,1.790861-4,4-4Z"/><path d="M13.71517468,5.50000215v4.06813574"/><path d="M34.13964367,5.50000215v4.06813574"/><path d="M9.73128891,19.89056182h28.36000729"/></svg>`;
+const TRASHCAN_ICON = `<svg height="28" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polygon points="31.9449 7.6238 28.8403 4.5 19.1597 4.5 16.0551 7.6238 8.8724 7.6238 8.8724 12.2711 39.1276 12.2711 39.1276 7.6238 31.9449 7.6238"/><path d="m12.0445,12.2711h23.9496v28.1243c0,1.7135-1.3911,3.1046-3.1046,3.1046H15.1491c-1.7135,0-3.1046-1.3911-3.1046-3.1046V12.2711h0Z"/><line x1="24" y1="17.8855" x2="24" y2="37.8855"/><line x1="30" y1="17.8855" x2="30" y2="37.8855"/><line x1="18" y1="17.8855" x2="18" y2="37.8855"/></svg>`;
 const CARD_WIDTH = 280;
 const PEEK_OFFSET = 60;
 let _lastRenderedCount = -1;
@@ -1116,6 +1118,11 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.replace(clean);
     return;
   }
+  document.querySelector(".cal-open-btn").innerHTML = `${CALENDAR_ICON} Calendar`;
+  document.querySelectorAll(".btn-clear").forEach((btn) => {
+    const label = btn.textContent.trim();
+    btn.innerHTML = `${TRASHCAN_ICON} ${label}`;
+  });
   const now = /* @__PURE__ */ new Date();
   document.getElementById("dayInput").value = now.getDate();
   setCalView(now.getFullYear(), now.getMonth());
@@ -1565,7 +1572,8 @@ document.addEventListener("DOMContentLoaded", () => {
     .fetch-btn:hover { border-color: var(--blue); color: var(--blue); }
     .fetch-btn:disabled { opacity: 0.6; cursor: default; }
     .cal-open-btn {
-      padding: 8px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; gap: 2px;
+      padding: 6px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; white-space: nowrap;
       transition: all 0.15s; flex-shrink: 0;
     }
@@ -1573,8 +1581,8 @@ document.addEventListener("DOMContentLoaded", () => {
     
     /* ── Clear button ── */
     .btn-clear {
-      display: flex; align-items: center; justify-content: center;
-      padding: 8px 4px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; gap: 2px;
+      padding: 6px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; flex-shrink: 0;
       transition: all 0.15s; white-space: nowrap;
     }
@@ -1944,7 +1952,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="check-box"></span>
             <span class="check-lbl">Exclude weekends</span>
           </label>
-          <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all manually added day-offs">🗑 Clear day-offs</button>
+          <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all manually added day-offs">Clear day-offs</button>
         </div>
         <button class="cal-btn-close" onclick="closeCalendar()">Done</button>
       </div>
@@ -2029,9 +2037,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div>
           <label class="mb-6">Custom days</label>
           <div class="d-flex ai-center jc-between gap-8">
-            <button onclick="openCalendar()" class="cal-open-btn" title="Pick specific days off in a calendar"><span class="fs-18">📅</span> Calendar</button>
+            <button onclick="openCalendar()" class="cal-open-btn" title="Pick specific days off in a calendar">Calendar</button>
             <span class="check-lbl">Days selected: <span id="calDayoffCount" class="fw-600 text-main">0</span></span>
-            <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all custom day-offs">🗑 Clear</button>
+            <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all custom day-offs">Clear</button>
           </div>
         </div>
       </div>

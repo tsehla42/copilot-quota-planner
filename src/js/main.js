@@ -6,6 +6,7 @@ import {
   getAccounts, saveSelectedId, toggleHeader, initHeaderCollapsed,
 } from './accounts.js';
 import { escHtml, GH_API, _setFetchStatus } from './auth.js';
+import { CALENDAR_ICON, TRASHCAN_ICON } from './icons.js';
 import {
   openCalendar, closeCalendar, calNavMonth, calToggleDay, clearCustomDayoffs,
   onWeekendsToggle, onCalWeekendsToggle, setCalView,
@@ -152,6 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return; // halt DOMContentLoaded — page will reload immediately
   }
   // END DEMO_ONLY
+
+  // Inject SVG icons into static HTML buttons
+  document.querySelector('.cal-open-btn').innerHTML = `${CALENDAR_ICON} Calendar`;
+  document.querySelectorAll('.btn-clear').forEach(btn => {
+    const label = btn.textContent.trim();
+    btn.innerHTML = `${TRASHCAN_ICON} ${label}`;
+  });
 
   // Set today's date
   const now = new Date();
