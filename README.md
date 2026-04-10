@@ -45,13 +45,13 @@ That's it — all calculations happen instantly in the browser.
 
 If you connect a GitHub token, the calculator will fetch your real quota percentage automatically instead of you having to look it up manually.
 
-> **Important:** Only a `ghu_` OAuth token works for this. Regular Personal Access Tokens (`ghp_`, `github_pat_`) cannot access the quota API.
+> **Important:** Only a `gho_` OAuth token works for this. Regular Personal Access Tokens (`ghp_`, `github_pat_`) cannot access the quota API.
 
-### How to get a `ghu_` token from VS Code
+### How to get a `gho_` token from VS Code
 
 1. Press `F1` → "Developer: Toggle Developer Tools" → open the **Network** tab
-2. Filter by `copilot_internal`, tick **Preserve log**
-3. Open Copilot Chat (`Ctrl+Alt+I`) and send any message — a `user` row appears in the network list
+2. Press `Ctrl+R` to reload the page
+3. Find the `user` request
 4. Click that row → **Request Headers** → copy the value after `Authorization: token `
 5. Paste it into the "Connect token" form in the calculator
 

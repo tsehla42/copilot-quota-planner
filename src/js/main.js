@@ -51,7 +51,7 @@ export async function fetchRealUsage() {
       if (!userRes.ok) throw new Error(`Token invalid (${userRes.status}). Remove this account and reconnect.`);
       const fallbackUser = await userRes.json();
       _setFetchStatus(
-        `✓ Token valid for @${escHtml(fallbackUser.login)} · Real quota % needs a ghu_ OAuth token`,
+        `✓ Token valid for @${escHtml(fallbackUser.login)} · Real quota % needs a gho_ OAuth token`,
         'var(--blue)',
       );
       return;
@@ -141,10 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Remove this entire block (and the DEMO_ONLY comment) before final release.
   if (new URLSearchParams(location.search).get('demo') === '1') {
     localStorage.setItem('gh_accounts', JSON.stringify([
-      { id: 'demo-1', token: 'ghu_demo1_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-1', name: 'Demo Account One',   avatar_url: '', plan: 'Individual', lastQuota: null },
-      { id: 'demo-2', token: 'ghu_demo2_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-2', name: 'Demo Account Two',   avatar_url: '', plan: 'Teams',      lastQuota: null },
-      { id: 'demo-3', token: 'ghu_demo3_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-3', name: 'Demo Account Three', avatar_url: '', plan: 'Business',   lastQuota: null },
-      { id: 'demo-4', token: 'ghu_demo4_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-4', name: 'Demo Account Four',  avatar_url: '', plan: 'Individual', lastQuota: null },
+      { id: 'demo-1', token: 'gho_demo1_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-1', name: 'Demo Account One',   avatar_url: '', plan: 'Individual', lastQuota: null },
+      { id: 'demo-2', token: 'gho_demo2_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-2', name: 'Demo Account Two',   avatar_url: '', plan: 'Teams',      lastQuota: null },
+      { id: 'demo-3', token: 'gho_demo3_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-3', name: 'Demo Account Three', avatar_url: '', plan: 'Business',   lastQuota: null },
+      { id: 'demo-4', token: 'gho_demo4_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-4', name: 'Demo Account Four',  avatar_url: '', plan: 'Individual', lastQuota: null },
     ]));
     localStorage.setItem('gh_selected_id', 'demo-1');
     const clean = location.pathname + location.search.replace(/[?&]demo=1/, '');
@@ -212,8 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('account:signed-out', () => {
     state.quotaEntitlement = 300;
     state.quotaRemaining   = null;
+    document.getElementById('usageInput').value  = '0';
+    document.getElementById('usageSlider').value = '0';
+    syncUsage(0);
     _setFetchStatus('', '');
-    updateStatus();
   });
 
   renderAllMonths();

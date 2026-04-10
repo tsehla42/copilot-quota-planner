@@ -85,7 +85,7 @@ export async function addAccounts(tokenArray) {
     const token = raw.trim();
     if (!token) continue;  // skip blank
     if (!validateTokenFormat(token)) {
-      failed.push({ token, reason: 'Invalid token format — must start with ghp_, ghu_, gho_, or github_pat_' });
+      failed.push({ token, reason: 'Invalid token format — must start with ghp_, gho_, or github_pat_' });
       continue;
     }
     try {
@@ -426,13 +426,13 @@ function _tokenModalHtml() {
     <p class="modal-sub">Tokens are stored only in this browser and sent directly to <code>api.github.com</code> — never to any third party.</p>
     <div id="tokenModalErr" class="auth-error"></div>
     <details class="info-box">
-      <summary>How to get a <code>ghu_</code> token from VS Code</summary>
+      <summary>How to get a <code>gho_</code> token from VS Code</summary>
       <div style="margin-top:8px">
         <div class="step-row"><span class="step-num">1</span><div>Press <code>F1</code> → <strong>Toggle Developer Tools</strong> → Network tab</div></div>
-        <div class="step-row"><span class="step-num">2</span><div>Filter by <code>copilot_internal</code>, tick <strong>Preserve log</strong></div></div>
-        <div class="step-row"><span class="step-num">3</span><div>Send any Copilot Chat message (<code>Ctrl+Alt+I</code>) — a <code>user</code> row appears</div></div>
+        <div class="step-row"><span class="step-num">2</span><div>Press <code>Ctrl+R</code> to reload the page</div></div>
+        <div class="step-row"><span class="step-num">3</span><div>Find the <code>user</code> request</div></div>
         <div class="step-row"><span class="step-num">4</span><div>Click that row → Request Headers → copy value after <code>Authorization: token </code></div></div>
-        <div class="step-row"><span class="step-num">5</span><div>Starts with <code>ghu_</code> — paste it below</div></div>
+        <div class="step-row"><span class="step-num">5</span><div>Starts with <code>gho_</code> — paste it below</div></div>
       </div>
     </details>
     <label>Token(s)</label>

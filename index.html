@@ -120,7 +120,7 @@ async function addAccounts(tokenArray) {
     const token = raw.trim();
     if (!token) continue;
     if (!validateTokenFormat(token)) {
-      failed.push({ token, reason: "Invalid token format — must start with ghp_, ghu_, gho_, or github_pat_" });
+      failed.push({ token, reason: "Invalid token format — must start with ghp_, gho_, or github_pat_" });
       continue;
     }
     try {
@@ -379,13 +379,13 @@ function _tokenModalHtml() {
     <p class="modal-sub">Tokens are stored only in this browser and sent directly to <code>api.github.com</code> — never to any third party.</p>
     <div id="tokenModalErr" class="auth-error"></div>
     <details class="info-box">
-      <summary>How to get a <code>ghu_</code> token from VS Code</summary>
+      <summary>How to get a <code>gho_</code> token from VS Code</summary>
       <div style="margin-top:8px">
         <div class="step-row"><span class="step-num">1</span><div>Press <code>F1</code> → <strong>Toggle Developer Tools</strong> → Network tab</div></div>
-        <div class="step-row"><span class="step-num">2</span><div>Filter by <code>copilot_internal</code>, tick <strong>Preserve log</strong></div></div>
-        <div class="step-row"><span class="step-num">3</span><div>Send any Copilot Chat message (<code>Ctrl+Alt+I</code>) — a <code>user</code> row appears</div></div>
+        <div class="step-row"><span class="step-num">2</span><div>Press <code>Ctrl+R</code> to reload the page</div></div>
+        <div class="step-row"><span class="step-num">3</span><div>Find the <code>user</code> request</div></div>
         <div class="step-row"><span class="step-num">4</span><div>Click that row → Request Headers → copy value after <code>Authorization: token </code></div></div>
-        <div class="step-row"><span class="step-num">5</span><div>Starts with <code>ghu_</code> — paste it below</div></div>
+        <div class="step-row"><span class="step-num">5</span><div>Starts with <code>gho_</code> — paste it below</div></div>
       </div>
     </details>
     <label>Token(s)</label>
@@ -1023,7 +1023,7 @@ async function fetchRealUsage() {
       if (!userRes.ok) throw new Error(`Token invalid (${userRes.status}). Remove this account and reconnect.`);
       const fallbackUser = await userRes.json();
       _setFetchStatus(
-        `✓ Token valid for @${escHtml(fallbackUser.login)} · Real quota % needs a ghu_ OAuth token`,
+        `✓ Token valid for @${escHtml(fallbackUser.login)} · Real quota % needs a gho_ OAuth token`,
         "var(--blue)"
       );
       return;
@@ -1106,10 +1106,10 @@ function onMonthLenChange() {
 document.addEventListener("DOMContentLoaded", () => {
   if (new URLSearchParams(location.search).get("demo") === "1") {
     localStorage.setItem("gh_accounts", JSON.stringify([
-      { id: "demo-1", token: "ghu_demo1_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-1", name: "Demo Account One", avatar_url: "", plan: "Individual", lastQuota: null },
-      { id: "demo-2", token: "ghu_demo2_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-2", name: "Demo Account Two", avatar_url: "", plan: "Teams", lastQuota: null },
-      { id: "demo-3", token: "ghu_demo3_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-3", name: "Demo Account Three", avatar_url: "", plan: "Business", lastQuota: null },
-      { id: "demo-4", token: "ghu_demo4_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-4", name: "Demo Account Four", avatar_url: "", plan: "Individual", lastQuota: null }
+      { id: "demo-1", token: "gho_demo1_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-1", name: "Demo Account One", avatar_url: "", plan: "Individual", lastQuota: null },
+      { id: "demo-2", token: "gho_demo2_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-2", name: "Demo Account Two", avatar_url: "", plan: "Teams", lastQuota: null },
+      { id: "demo-3", token: "gho_demo3_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-3", name: "Demo Account Three", avatar_url: "", plan: "Business", lastQuota: null },
+      { id: "demo-4", token: "gho_demo4_placeholder_xxxxxxxxxxxxxxxx", login: "demo-user-4", name: "Demo Account Four", avatar_url: "", plan: "Individual", lastQuota: null }
     ]));
     localStorage.setItem("gh_selected_id", "demo-1");
     const clean = location.pathname + location.search.replace(/[?&]demo=1/, "");
@@ -1158,8 +1158,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("account:signed-out", () => {
     state.quotaEntitlement = 300;
     state.quotaRemaining = null;
+    document.getElementById("usageInput").value = "0";
+    document.getElementById("usageSlider").value = "0";
+    syncUsage(0);
     _setFetchStatus("", "");
-    updateStatus();
   });
   renderAllMonths();
   updateStatus();
@@ -1965,18 +1967,18 @@ document.addEventListener("DOMContentLoaded", () => {
       <label for="usageSlider">Current usage shown on GitHub (%)</label>
       <div class="d-flex gap-8 ai-center mb-0">
         <div class="flex-1">
-          <input type="range" id="usageSlider" min="0" max="100" step="0.1" value="50"
+          <input type="range" id="usageSlider" min="0" max="100" step="0.1" value="0"
             oninput="syncUsage(this.value)" class="mb-0 d-block" />
         </div>
         <button id="fetchBtn" onclick="fetchRealUsage()" class="fetch-btn"
-          title="Fetch quota from GitHub (requires ghu_ OAuth token)">Fetch</button>
+          title="Fetch quota from GitHub (requires gho_ OAuth token)">Fetch</button>
       </div>
       <div class="d-flex jc-between fs-13 muted mb-4 pr-88">
-        <span>0%</span><span id="usageDisplay" class="fw-600 text-main">50%</span><span>100%</span>
+        <span>0%</span><span id="usageDisplay" class="fw-600 text-main">0%</span><span>100%</span>
       </div>
       <div id="fetchStatus" class="fs-12 muted mb-8 min-h-16"></div>
       <div class="num-wrap">
-        <input type="number" id="usageInput" min="0" max="100" step="0.1" value="50"
+        <input type="number" id="usageInput" min="0" max="100" step="0.1" value="0"
           oninput="syncUsageFromInput(this.value)" />
         <div class="num-spin-dual">
           <div class="num-spin-group">
