@@ -23,8 +23,12 @@ yarn-error.log*
 
 # Vibecoding instructions
 .github/**.md
+docs/superpowers
 
 *todo*
 
 # Vite intermediate build output
 _build/
+
+# Distributable build output
+copilot-quota-planner.html

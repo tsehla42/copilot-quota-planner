@@ -10,7 +10,9 @@ function setupDom(excludeWeekends = false) {
   document.body.innerHTML = `
     <input type="checkbox" id="excludeWeekendsChk" ${excludeWeekends ? 'checked' : ''} />
     <input type="checkbox" id="calExcludeWeekendsChk" ${excludeWeekends ? 'checked' : ''} />
-    <span id="calDayoffCount">0</span>
+    <span id="calDayoffSummary" class="dayoff-summary">Days selected: <span id="calDayoffCount">0</span></span>
+    <button id="panelClearBtn">Clear</button>
+    <button id="calendarClearBtn">Clear day-offs</button>
     <div id="calGrid"></div>
     <span id="calTitle"></span>
     <div id="calOverlay" class="cal-overlay"></div>
@@ -56,9 +58,12 @@ describe('calToggleDay', () => {
     expect(calCustomDayoffs.has('2026-04-16')).toBe(false);
   });
 
-  it('updates calDayoffCount DOM element', () => {
+  it('updates calDayoffCount DOM element and enables clear controls', () => {
     calToggleDay('2026-04-20');
     expect(document.getElementById('calDayoffCount').textContent).toBe('1');
+    expect(document.getElementById('panelClearBtn').disabled).toBe(false);
+    expect(document.getElementById('calendarClearBtn').disabled).toBe(false);
+    expect(document.getElementById('calDayoffSummary').classList.contains('is-active')).toBe(true);
   });
 });
 
@@ -74,6 +79,13 @@ describe('clearCustomDayoffs', () => {
     calToggleDay('2026-04-10');
     clearCustomDayoffs();
     expect(document.getElementById('calDayoffCount').textContent).toBe('0');
+  });
+
+  it('disables both clear buttons and removes active summary styling when empty', () => {
+    clearCustomDayoffs();
+    expect(document.getElementById('panelClearBtn').disabled).toBe(true);
+    expect(document.getElementById('calendarClearBtn').disabled).toBe(true);
+    expect(document.getElementById('calDayoffSummary').classList.contains('is-active')).toBe(false);
   });
 });
 
@@ -129,6 +141,8 @@ describe('per-month day-off tracking', () => {
     calNavMonth(1); // go to May
     expect(calCustomDayoffs.has('2026-04-10')).toBe(false);
     expect(calCustomDayoffs.size).toBe(0);
+    expect(document.getElementById('panelClearBtn').disabled).toBe(true);
+    expect(document.getElementById('calendarClearBtn').disabled).toBe(true);
   });
 
   it('navigating back to original month restores day-offs', () => {

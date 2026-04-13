@@ -13,7 +13,9 @@ vi.mock('../js/calendar.js', () => ({
   getExcludeWeekends: () => false,
 }));
 
-import { fmt1, fmt2, fmtInt, barColor, stepNum, syncUsage, syncUsageFromInput } from '../js/uiHelpers.js';
+import {
+  fmt1, fmt2, fmtInt, barColor, stepNum, syncUsage, syncUsageFromInput, updateStatus,
+} from '../js/uiHelpers.js';
 
 describe('fmt1', () => {
   it('formats to 1 decimal place', () => expect(fmt1(3.14159)).toBe('3.1'));
@@ -115,8 +117,32 @@ function buildStatusDom() {
     <span id="paceText"></span>
     <div id="projectionLine"></div>
     <div id="requestsToday"></div>
+    <div id="requestsRemaining"></div>
   `;
 }
+
+describe('updateStatus', () => {
+  beforeEach(buildStatusDom);
+
+  it('applies class-based red styling for over-budget projection and vs target', () => {
+    document.getElementById('usageInput').value = '80';
+    document.getElementById('dayInput').value = '10';
+
+    updateStatus();
+
+    expect(document.getElementById('statVsTarget').className).toBe('value red');
+    expect(document.getElementById('projectionLine').innerHTML).toContain('class="proj-value red"');
+    expect(document.getElementById('projectionLine').innerHTML).not.toContain('style="color:');
+  });
+
+  it('renders request cards with defined color classes', () => {
+    updateStatus();
+
+    expect(document.getElementById('requestsToday').innerHTML).not.toContain('undefined');
+    expect(document.getElementById('requestsToday').innerHTML).toContain('value green');
+    expect(document.getElementById('requestsRemaining').innerHTML).toContain('value blue');
+  });
+});
 
 describe('syncUsage', () => {
   beforeEach(buildStatusDom);

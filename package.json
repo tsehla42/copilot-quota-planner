@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "cp _build/index.html index.html",
+    "postbuild": "cp _build/index.html copilot-quota-planner.html",
     "preview": "vite preview",
+    "open": "code --open-url http://localhost:5173",
     "test": "vitest",
     "test:ui": "vitest --ui"
   },

@@ -19,9 +19,9 @@
   <div class="cal-overlay" id="calOverlay" onclick="if(event.target===this)closeCalendar()">
     <div class="cal-popup">
       <div class="cal-header">
-        <button onclick="calNavMonth(-1)">‹</button>
+        <button class="btn-cal-nav" onclick="calNavMonth(-1)">‹</button>
         <span class="cal-title" id="calTitle"></span>
-        <button onclick="calNavMonth(1)">›</button>
+        <button class="btn-cal-nav" onclick="calNavMonth(1)">›</button>
       </div>
       <p class="cal-instruction mb-0">Click days to mark them as excluded (highlighted in red). </p>
       <p class="cal-instruction">Press <kbd>Done</kbd> or <kbd>Esc</kbd> to save.</p>
@@ -35,7 +35,7 @@
           </label>
           <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all manually added day-offs">Clear day-offs</button>
         </div>
-        <button class="cal-btn-close" onclick="closeCalendar()">Done</button>
+        <button class="btn-cal-done" onclick="closeCalendar()">Done</button>
       </div>
     </div>
   </div>
@@ -43,7 +43,7 @@
   <!-- Auth Modal -->
   <div class="modal-overlay" id="authModal" onclick="if(event.target===this)closeAccountsModal()">
     <div class="modal">
-      <button class="modal-close" onclick="closeAccountsModal()">✕</button>
+      <button class="btn-modal-close" onclick="closeAccountsModal()">✕</button>
       <div id="modalContent"></div>
     </div>
   </div>
@@ -57,9 +57,9 @@
       <div class="d-flex gap-8 ai-center mb-0">
         <div class="flex-1">
           <input type="range" id="usageSlider" min="0" max="100" step="0.1" value="0"
-            oninput="syncUsage(this.value)" class="mb-0 d-block" />
+            oninput="syncUsage(this.value)" class="mb-0 d-block" autocomplete="off" />
         </div>
-        <button id="fetchBtn" onclick="fetchRealUsage()" class="fetch-btn"
+        <button id="fetchBtn" onclick="fetchRealUsage()" class="btn-fetch"
           title="Fetch quota from GitHub (requires gho_ OAuth token)">Fetch</button>
       </div>
       <div class="d-flex jc-between fs-13 muted mb-4 pr-88">
@@ -68,7 +68,7 @@
       <div id="fetchStatus" class="fs-12 muted mb-8 min-h-16"></div>
       <div class="num-wrap">
         <input type="number" id="usageInput" min="0" max="100" step="0.1" value="0"
-          oninput="syncUsageFromInput(this.value)" />
+          oninput="syncUsageFromInput(this.value)" autocomplete="off" />
         <div class="num-spin-dual">
           <div class="num-spin-group">
             <div class="spin-label">±1</div>
@@ -97,12 +97,15 @@
         </div>
         <div>
           <label class="mb-6">Month days</label>
-          <select id="monthLen" onchange="onMonthLenChange()" class="mb-0">
-            <option value="28">28 days (Feb)</option>
-            <option value="29">29 days (Feb leap)</option>
-            <option value="30">30 days (Apr/Jun/Sep/Nov)</option>
-            <option value="31" selected>31 days (Jan/Mar/May/Jul/Aug/Oct/Dec)</option>
-          </select>
+          <div class="select-wrap mb-0">
+            <select id="monthLen" onchange="onMonthLenChange()">
+              <option value="28">28 days (Feb)</option>
+              <option value="29">29 days (Feb leap)</option>
+              <option value="30">30 days (Apr/Jun/Sep/Nov)</option>
+              <option value="31" selected>31 days (Jan/Mar/May/Jul/Aug/Oct/Dec)</option>
+            </select>
+            <button type="button" class="select-arrow" onclick="openMonthPicker()" aria-label="Open month length options">▼</button>
+          </div>
         </div>
       </div>
 
@@ -118,7 +121,7 @@
         <div>
           <label class="mb-6">Custom days</label>
           <div class="d-flex ai-center jc-between gap-8">
-            <button onclick="openCalendar()" class="cal-open-btn" title="Pick specific days off in a calendar">Calendar</button>
+            <button onclick="openCalendar()" class="btn-calendar" title="Pick specific days off in a calendar">Calendar</button>
             <span class="check-lbl">Days selected: <span id="calDayoffCount" class="fw-600 text-main">0</span></span>
             <button onclick="clearCustomDayoffs()" class="btn-clear" title="Clear all custom day-offs">Clear</button>
           </div>
@@ -146,26 +149,32 @@
 
       <div class="stat-block mt-14">
         <div class="stat">
+          <span class="stat-info" aria-hidden="true"><span class="stat-tooltip"></span></span>
           <div class="value blue" id="statDaysLeft">10</div>
           <div class="label">days remaining</div>
         </div>
         <div class="stat">
+          <span class="stat-info" aria-hidden="true"><span class="stat-tooltip"></span></span>
           <div class="value" id="statBudgetLeft">40.6%</div>
           <div class="label" id="statBudgetLeftLabel">quota remaining</div>
         </div>
         <div class="stat">
+          <span class="stat-info" aria-hidden="true"><span class="stat-tooltip"></span></span>
           <div class="value" id="statDailyAllowance">4.06%</div>
           <div class="label" id="statDailyAllowanceLabel">% / day (ideal)</div>
         </div>
         <div class="stat">
+          <span class="stat-info" aria-hidden="true"><span class="stat-tooltip"></span></span>
           <div class="value yellow" id="statCurrentPace">2.83%</div>
           <div class="label" id="statCurrentPaceLabel">% / day (current burn)</div>
         </div>
         <div class="stat">
+          <span class="stat-info" aria-hidden="true"><span class="stat-tooltip"></span></span>
           <div class="value" id="statPerfectTarget">67.7%</div>
           <div class="label" id="statPerfectTargetLabel">perfect pace target today</div>
         </div>
         <div class="stat">
+          <span class="stat-info" aria-hidden="true"><span class="stat-tooltip"></span></span>
           <div class="value" id="statVsTarget">−3.6%</div>
           <div class="label" id="statVsTargetLabel">vs. perfect target</div>
         </div>
@@ -183,24 +192,24 @@
     </div>
   </div>
 
-  <!-- ─── REQUEST BUDGET NOW ─────────────────────────── -->
-  <div class="card mb16">
-    <h2>Requests You Can Make Today (Remaining Budget)</h2>
-    <p class="muted fs-12 mb-14">Based on your remaining daily allowance from current status above</p>
-    <div id="requestsToday" class="stat-block stat-block-3"></div>
-  </div>
-
   <!-- ─── REMAINING REQUESTS THIS MONTH ─────────────── -->
   <div class="card mb16">
     <h2>Remaining Requests for Month</h2>
-    <p class="muted fs-12 mb-14">Total requests you can still make this month based on remaining quota</p>
+    <p class="muted fs-14 mb-14">Total requests you can still make this month based on remaining quota</p>
     <div id="requestsRemaining" class="stat-block stat-block-3"></div>
+  </div>
+
+  <!-- ─── REQUEST BUDGET NOW ─────────────────────────── -->
+  <div class="card mb16">
+    <h2>Requests You Can Make Today (Remaining Budget)</h2>
+    <p class="muted fs-14 mb-14">Based on your remaining daily allowance from current status above</p>
+    <div id="requestsToday" class="stat-block stat-block-3"></div>
   </div>
 
   <!-- ─── MODEL BUDGET REFERENCE ─────────────────────── -->
   <div class="card mt24">
     <h2>Model Request Budget by Month Length</h2>
-    <p class="muted fs-12 mb-14">Requests per day at uniform pace across all 4 month lengths.</p>
+    <p class="muted fs-14 mb-14">Requests per day at uniform pace across all 4 month lengths.</p>
     <div class="table-wrap">
       <table>
         <thead>

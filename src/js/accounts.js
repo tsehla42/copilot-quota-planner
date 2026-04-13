@@ -123,28 +123,6 @@ export function updateAccountQuota(id, quota, plan = null) {
   saveAccounts(accounts);
 }
 
-export function migrateFromLegacy() {
-  // Only migrate if gh_accounts doesn't exist yet
-  if (localStorage.getItem(GH_ACCOUNTS_KEY)) return;
-  const token = localStorage.getItem('gh_token');
-  const userJson = localStorage.getItem('gh_user');
-  if (!token || !userJson) return;
-  try {
-    const user = JSON.parse(userJson);
-    addAccountObject({
-      id: `acc-${Date.now()}-legacy`,
-      token,
-      login: user.login || '',
-      name: user.name || '',
-      avatar_url: user.avatar_url || '',
-      plan: null,
-      lastQuota: null,
-    });
-    localStorage.removeItem('gh_token');
-    localStorage.removeItem('gh_user');
-  } catch { /* ignore malformed legacy data */ }
-}
-
 export function getSelectedToken() {
   return getSelectedAccount()?.token ?? null;
 }
@@ -200,7 +178,7 @@ export function renderAccountsHeader() {
           <div class="fs-12 muted">Add a token to auto-fetch your quota from GitHub.</div>
         </div>
         <div>
-          <button class="auth-btn auth-btn-primary" onclick="openAccountsModal()">
+          <button class="auth-btn btn-auth-primary" onclick="openAccountsModal()">
             ${GITHUB_ICON}
             Connect token
           </button>
@@ -241,15 +219,14 @@ export function renderAccountsHeader() {
           <div class="accounts-controls">
             ${arrowsHtml}
             <button class="auth-btn" onclick="openAccountsModal()">+ Add account</button>
-            <button class="auth-btn auth-btn-danger" onclick="signOutAllAndRender()">${count === 1 ? 'Sign out' : 'Sign out all'}</button>
+            <button class="auth-btn btn-auth-danger" onclick="signOutAllAndRender()">${count === 1 ? 'Sign out' : 'Sign out all'}</button>
           </div>
         </div>
       </div>`;
   }
 
-  // Always update card slots in-place (no animation on initial/count-change render)
   const maxPeeks = _computeMaxPeeks(count);
-  _updateCardSlots(false, null, maxPeeks);
+  _updateCardSlots(maxPeeks);
 }
 
 export function toggleHeader() {
@@ -295,28 +272,12 @@ export function initHeaderCollapsed() {
  *   slot-2 = peek-1 (if visible)
  *   slot-3 = selected (frontmost)
  *
- * @param {boolean} animate if true, add .entering to selected slot and .exiting to old selected
- * @param {string|null} prevSelectedId ID of old selected account (for exit animation)
  * @param {number} maxPeeks max number of peek cards to show (computed based on viewport)
  */
-function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
+function _updateCardSlots(maxPeeks = 2) {
   const accounts = getAccounts();
   const selected = getSelectedAccount();
   if (!accounts.length || !selected) return;
-
-  // Clean animation classes from all slots BEFORE updating
-  for (let i = 0; i < 4; i++) {
-    const slot = document.getElementById(`cardSlot-${i}`);
-    if (slot) {
-      slot.classList.remove('entering', 'exiting');
-    }
-  }
-
-  // Force reflow to ensure browser has flushed style recalculation
-  // This breaks up the DOM mutation batch so CSS animations will trigger
-  if (animate) {
-    void document.getElementById('cardSlot-0')?.offsetWidth;
-  }
 
   const count = accounts.length;
   const selectedIdx = accounts.findIndex(a => a.id === selected.id);
@@ -373,37 +334,7 @@ function _updateCardSlots(animate, prevSelectedId = null, maxPeeks = 2) {
       ${removeBtn}`;
 
     slot.className = `account-card ${role}`;
-
-    // Add animation only on selected slot when navigating
-    if (animate && isSelectedSlot) {
-      // Force reflow to flush style recalculation before adding animation class
-      // This ensures CSS engine sees: no animation class → animation class transition
-      void slot.offsetWidth;
-      slot.classList.add('entering');
-      const cleanupEntering = () => slot.classList.remove('entering');
-      slot.addEventListener('animationend', cleanupEntering, { once: true });
-      // Fallback: remove entering class after 400ms if animationend doesn't fire
-      setTimeout(cleanupEntering, 400);
-    }
   });
-
-  // Animate old selected slot out
-  if (animate && prevSelectedId) {
-    slotAccounts.forEach((account, i) => {
-      if (account?.id === prevSelectedId) {
-        const slot = document.getElementById(`cardSlot-${i}`);
-        if (slot) {
-          // Force reflow to flush style recalculation before adding animation class
-          void slot.offsetWidth;
-          slot.classList.add('exiting');
-          const cleanupExiting = () => slot.classList.remove('exiting');
-          slot.addEventListener('animationend', cleanupExiting, { once: true });
-          // Fallback: remove exiting class after 400ms if animationend doesn't fire
-          setTimeout(cleanupExiting, 400);
-        }
-      }
-    });
-  }
 }
 
 export function openAccountsModal() {
@@ -445,7 +376,7 @@ function _tokenModalHtml() {
     <button class="btn-add-field" onclick="_addTokenField()">＋ Add another token</button>
     <div class="modal-row" style="margin-top:16px">
       <button class="auth-btn" onclick="closeAccountsModal()">Cancel</button>
-      <button class="auth-btn auth-btn-primary" id="tokenSubmitBtn" onclick="_submitTokens()">Add account(s)</button>
+      <button class="auth-btn btn-auth-primary" id="tokenSubmitBtn" onclick="_submitTokens()">Add account(s)</button>
     </div>`;
 }
 
@@ -507,10 +438,9 @@ export function navigateAccount(direction) {
   const nextId = getNextAccountId(prevId, direction);
   if (!nextId || nextId === prevId) return;
   saveSelectedId(nextId);
-  // Animate the card slots
   const accounts = getAccounts();
   const maxPeeks = _computeMaxPeeks(accounts.length);
-  _updateCardSlots(true, prevId, maxPeeks);
+  _updateCardSlots(maxPeeks);
   // Dispatch event so main.js loads cached quota
   window.dispatchEvent(new CustomEvent('account:switch-requested', { detail: { id: nextId } }));
 }

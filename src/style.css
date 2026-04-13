@@ -2,6 +2,7 @@
       --bg: #0d1117;
       --surface: #161b22;
       --border: #30363d;
+      --dark-green: #1a7f37;
       --accent: #238636;
       --accent-hover: #2ea043;
       --blue: #388bfd;
@@ -22,8 +23,6 @@
       line-height: 1.6;
       padding: 24px 16px 60px;
     }
-
-
 
     .subtitle {
       color: var(--muted);
@@ -50,7 +49,7 @@
     }
 
     .card h2 {
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 600;
       margin-bottom: 16px;
       color: var(--text);
@@ -123,10 +122,14 @@
       background: var(--tag-bg);
       border-radius: 6px;
       padding: 10px 12px;
+      position: relative;
+      z-index: 1;
     }
 
+    .stat:hover { z-index: 2; }
+
     .stat .value {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 600;
       line-height: 1.1;
     }
@@ -139,10 +142,49 @@
       letter-spacing: 0;
     }
 
+    .stat-info {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      cursor: default;
+      opacity: 0;
+      user-select: none;
+      line-height: 1;
+      padding: 2px 6px 8px;
+      display: flex;
+      align-items: center;
+      transition: opacity 0.15s;
+    }
+
+    .stat:hover .stat-info { opacity: 0.6; }
+    .stat-info:hover { opacity: 1 !important; }
+
+    .stat-tooltip {
+      display: none;
+      position: absolute;
+      top: 26px;
+      right: 0;
+      background: rgba(22, 27, 34, 0.67);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: pre-line;
+      width: 220px;
+      z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,.25);
+      pointer-events: none;
+    }
+
+    .stat-info:hover .stat-tooltip { display: block; }
+
     .green  { color: var(--accent-hover); }
     .blue   { color: var(--blue); }
     .yellow { color: var(--yellow); }
     .red    { color: var(--red); }
+    .darkgreen { color: var(--dark-green); }
 
     /* Progress bar */
     .progress-wrap {
@@ -199,7 +241,7 @@
       padding: 8px 12px;
       color: var(--muted);
       font-weight: 500;
-      font-size: 13px;
+      font-size: 15px;
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
@@ -271,10 +313,10 @@
       transition: all 0.15s; text-decoration: none; white-space: nowrap;
     }
     .auth-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(56,139,253,0.1); }
-    .auth-btn-primary { background: var(--accent); border-color: var(--accent); color: #fff !important; }
-    .auth-btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-    .auth-btn-danger { border-color: rgba(218,54,51,0.4); color: var(--red); }
-    .auth-btn-danger:hover { background: rgba(218,54,51,0.1); border-color: var(--red); color: var(--red); }
+    .btn-auth-primary { background: var(--accent); border-color: var(--accent); color: #fff !important; }
+    .btn-auth-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-auth-danger { border-color: rgba(218,54,51,0.4); color: var(--red); }
+    .btn-auth-danger:hover { background: rgba(218,54,51,0.1); border-color: var(--red); color: var(--red); }
 
     /* Modal */
     .modal-overlay {
@@ -296,11 +338,11 @@
       transition: border-color 0.15s;
     }
     .modal input:focus { border-color: var(--blue); }
-    .modal-close {
+    .btn-modal-close {
       position: absolute; top: 14px; right: 14px; background: none; border: none;
       color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px 6px;
     }
-    .modal-close:hover { color: var(--text); }
+    .btn-modal-close:hover { color: var(--text); }
     .auth-error {
       background: rgba(218,54,51,0.1); border: 1px solid rgba(218,54,51,0.3); border-radius: 6px;
       padding: 8px 12px; font-size: 12px; color: var(--red); margin-bottom: 12px; display: none;
@@ -322,6 +364,38 @@
     .num-spin button:first-child { border-radius: 0 6px 0 0; }
     .num-spin button:last-child  { border-radius: 0 0 6px 0; }
     .num-spin button:hover { background: rgba(56,139,253,0.15); color: var(--blue); }
+
+    /* Custom select wrapper — matches num-spin button aesthetic */
+    .select-wrap { display: flex; align-items: stretch; }
+    .select-wrap select {
+      margin-bottom: 0;
+      border-radius: 6px 0 0 6px;
+      appearance: none;
+      -webkit-appearance: none;
+      flex: 1;
+    }
+    .select-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      border-left: none;
+      border-radius: 0 6px 6px 0;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+
+    .select-arrow:hover,
+    .select-arrow:focus-visible {
+      color: var(--blue);
+      background: rgba(56,139,253,0.1);
+      outline: none;
+    }
 
     /* Dual spinner (two pairs of buttons) */
     .num-spin-dual { display: flex; flex-direction: row; border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; }
@@ -350,6 +424,8 @@
     .check-row input[type="checkbox"]:checked + .check-box { background: var(--blue); border-color: var(--blue); }
     .check-row input[type="checkbox"]:checked + .check-box::after { content: ''; display: block; width: 4px; height: 7px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-1px); }
     .check-row .check-lbl { font-size: 13px; color: var(--text); }
+    .dayoff-summary { color: rgba(230, 237, 243, 0.42); transition: color 0.15s; }
+    .dayoff-summary.is-active { color: var(--text); }
 
     /* Calendar popup */
     .cal-overlay { display: none; position: fixed; inset: 0; z-index: 200;
@@ -360,10 +436,10 @@
       padding: 24px; width: 600px; max-width: 96vw; opacity: 0.88; }
     .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .cal-header .cal-title { font-size: 17px; font-weight: 600; }
-    .cal-header button { background: none; border: 1px solid var(--border); border-radius: 6px;
+    .btn-cal-nav { background: none; border: 1px solid var(--border); border-radius: 6px;
       color: var(--muted); cursor: pointer; padding: 4px 12px; font-size: 17px;
       transition: all 0.15s; }
-    .cal-header button:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-cal-nav:hover { border-color: var(--blue); color: var(--blue); }
     .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
     .cal-day-name { text-align: center; font-size: 13px; color: var(--muted); padding: 6px 0; font-weight: 500; }
     .cal-cell { text-align: center; border-radius: 6px; padding: 9px 4px; font-size: 15px;
@@ -377,28 +453,28 @@
     .cal-cell.cal-dayoff:hover { background: rgba(218,54,51,0.25); }
     .cal-footer { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .cal-footer .check-row { margin-bottom: 0; }
-    .cal-btn-close { padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border);
+    .btn-cal-done { padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border);
       background: var(--tag-bg); color: var(--text); cursor: pointer; font-size: 15px;
       transition: all 0.15s; }
-    .cal-btn-close:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-cal-done:hover { border-color: var(--blue); color: var(--blue); }
     .cal-instruction { font-size: 14px; color: var(--muted); margin-bottom: 10px; }
 
     /* ── Fetch / action buttons ── */
-    .fetch-btn {
+    .btn-fetch {
       width: 80px;
       padding: 6px; font-size: 13px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; white-space: nowrap;
       transition: all 0.15s; min-width: 80px; text-align: center; flex-shrink: 0;
     }
-    .fetch-btn:hover { border-color: var(--blue); color: var(--blue); }
-    .fetch-btn:disabled { opacity: 0.6; cursor: default; }
-    .cal-open-btn {
+    .btn-fetch:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-fetch:disabled { opacity: 0.6; cursor: default; }
+    .btn-calendar {
       display: flex; align-items: center; justify-content: center; gap: 2px;
       padding: 6px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--tag-bg); color: var(--text); cursor: pointer; white-space: nowrap;
       transition: all 0.15s; flex-shrink: 0;
     }
-    .cal-open-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-calendar:hover { border-color: var(--blue); color: var(--blue); }
     
     /* ── Clear button ── */
     .btn-clear {
@@ -408,6 +484,14 @@
       transition: all 0.15s; white-space: nowrap;
     }
     .btn-clear:hover { border-color: var(--red); color: var(--red); }
+    .btn-clear:disabled {
+      opacity: 0.48;
+      cursor: default;
+    }
+    .btn-clear:disabled:hover {
+      border-color: var(--border);
+      color: var(--text);
+    }
  
 
     /* ── Atomic utilities ── */
@@ -423,7 +507,9 @@
     .gap-6  { gap: 6px; }  .gap-8  { gap: 8px; }  .gap-10 { gap: 10px; }  .gap-12 { gap: 12px; }
     .fw-600 { font-weight: 600; }  .fw-700 { font-weight: 700; }
     .fs-10 { font-size: 10px; }  .fs-11 { font-size: 11px; }  .fs-12 { font-size: 12px; }
-    .fs-13 { font-size: 13px; }  .fs-20 { font-size: 20px; }
+    .fs-13 { font-size: 13px; }  .fs-14 { font-size: 14px; }  .fs-15 { font-size: 15px; }
+    .fs-16 { font-size: 16px; }  .fs-18 { font-size: 18px; }  .fs-20 { font-size: 20px; }  .fs-22 { font-size: 22px; }
+    .fs-24 { font-size: 24px; }  .fs-26 { font-size: 26px; }  .fs-28 { font-size: 28px; }
     .lh-15 { line-height: 1.5; }
     .muted     { color: var(--muted); }
     .text-main { color: var(--text); }
@@ -440,7 +526,7 @@
     .pr-88    { padding-right: 88px; }
     .fs-18    { font-size: 18px; }
     .avatar { width:32px; height:32px; border-radius:50%; border:2px solid var(--border); display:block; }
-    .proj-value { font-size: 22px; font-weight: 700; line-height: 1.5; }
+    .proj-value { font-size: 24px; font-weight: 700; line-height: 1.5; }
 
 /* ─── Accounts Header ──────────────────────────────────── */
 .accounts-header {
@@ -456,6 +542,12 @@
   max-height: 120px;
   overflow: hidden;
   transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease, border-color 0.3s ease, margin 0.3s ease;
+}
+
+/* Hide the empty header before JS populates it — prevents styled empty-box
+   flash on page reload. Automatically lifts once .accounts-header-body exists. */
+.accounts-header:not(:has(.accounts-header-body)) {
+  visibility: hidden;
 }
 
 .accounts-header.collapsed {
@@ -497,18 +589,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes accountsCardSlideIn {
-  from { opacity: 0; transform: translateX(-80px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes accountsCardSlideOut {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(80px); }
-}
-
 .accounts-header-body {
-  animation: accountsFadeIn 0.2s ease;
   width: 100%;
   display: flex;
   align-items: center;
@@ -624,15 +705,6 @@
   top: 6px;
   background: color-mix(in srgb, var(--surface) 8%, var(--bg) 92%);
   border-color: color-mix(in srgb, var(--border) 12%, var(--bg) 88%);
-}
-
-.account-card.entering {
-  animation: accountsCardSlideIn 0.35s ease forwards;
-}
-
-.account-card.exiting {
-  animation: accountsCardSlideOut 0.35s ease forwards;
-  pointer-events: none;
 }
 
 .account-card-avatar {

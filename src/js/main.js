@@ -2,17 +2,19 @@ import {
   getSelectedToken, ghHeaders, renderAccountsHeader,
   openAccountsModal, closeAccountsModal, signOutAllAndRender,
   _addTokenField, _submitTokens, navigateAccount, removeAccountAndRender,
-  migrateFromLegacy, updateAccountQuota, getSelectedAccount, showToast,
+  updateAccountQuota, getSelectedAccount, showToast,
   getAccounts, saveSelectedId, toggleHeader, initHeaderCollapsed,
 } from './accounts.js';
 import { escHtml, GH_API, _setFetchStatus } from './auth.js';
-import { CALENDAR_ICON, TRASHCAN_ICON } from './icons.js';
+import { CALENDAR_ICON, TRASHCAN_ICON, QUESTION_MARK_ICON } from './icons.js';
 import {
   openCalendar, closeCalendar, calNavMonth, calToggleDay, clearCustomDayoffs,
-  onWeekendsToggle, onCalWeekendsToggle, setCalView,
+  onWeekendsToggle, onCalWeekendsToggle, setCalView, calCustomDayoffs,
+  syncDayoffsFromCalendar,
 } from './calendar.js';
 import { syncUsage, syncUsageFromInput, updateStatus, renderAllMonths, stepNum, fmt1 } from './uiHelpers.js';
 import { state } from './state.js';
+import { S } from './strings.js';
 
 // ─── Expose functions to inline HTML event handlers ───────
 Object.assign(window, {
@@ -21,7 +23,7 @@ Object.assign(window, {
   onWeekendsToggle, onCalWeekendsToggle,
   openAccountsModal, closeAccountsModal, signOutAllAndRender,
   _addTokenField, _submitTokens, navigateAccount, removeAccountAndRender,
-  fetchRealUsage, onMonthLenChange, toggleHeader,
+  fetchRealUsage, onMonthLenChange, toggleHeader, openMonthPicker,
 });
 
 // ─── API fetch ─────────────────────────────────────────────
@@ -59,7 +61,10 @@ export async function fetchRealUsage() {
     }
 
     if (!res.ok) {
-      if (res.status === 401) throw new Error('Token invalid or expired (401). Remove this account and reconnect.');
+      if (res.status === 401) {
+        if (account) updateAccountQuota(account.id, null);
+        throw new Error('Token invalid or expired (401). Remove this account and reconnect.');
+      }
       throw new Error(`copilot_internal/user returned ${res.status}`);
     }
 
@@ -132,74 +137,91 @@ export async function fetchRealUsage() {
   }
 }
 
-function onMonthLenChange() {
+export function onMonthLenChange() {
   updateStatus();
 }
 
-// ─── Initialization ────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  // DEMO_ONLY: Pre-populate 4 fake accounts for testing via ?demo=1
-  // Remove this entire block (and the DEMO_ONLY comment) before final release.
-  if (new URLSearchParams(location.search).get('demo') === '1') {
-    localStorage.setItem('gh_accounts', JSON.stringify([
-      { id: 'demo-1', token: 'gho_demo1_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-1', name: 'Demo Account One',   avatar_url: '', plan: 'Individual', lastQuota: null },
-      { id: 'demo-2', token: 'gho_demo2_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-2', name: 'Demo Account Two',   avatar_url: '', plan: 'Teams',      lastQuota: null },
-      { id: 'demo-3', token: 'gho_demo3_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-3', name: 'Demo Account Three', avatar_url: '', plan: 'Business',   lastQuota: null },
-      { id: 'demo-4', token: 'gho_demo4_placeholder_xxxxxxxxxxxxxxxx', login: 'demo-user-4', name: 'Demo Account Four',  avatar_url: '', plan: 'Individual', lastQuota: null },
-    ]));
-    localStorage.setItem('gh_selected_id', 'demo-1');
-    const clean = location.pathname + location.search.replace(/[?&]demo=1/, '');
-    window.location.replace(clean);
-    return; // halt DOMContentLoaded — page will reload immediately
+export function openMonthPicker() {
+  const s = document.getElementById('monthLen');
+  if (s.showPicker) {
+    try { s.showPicker(); } catch { s.focus(); }
+  } else {
+    s.focus();
   }
-  // END DEMO_ONLY
+}
 
-  // Inject SVG icons into static HTML buttons
-  document.querySelector('.cal-open-btn').innerHTML = `${CALENDAR_ICON} Calendar`;
+// ─── Initialization helpers ────────────────────────────────────────────────
+
+function injectSvgIcons() {
+  document.querySelector('.btn-calendar').innerHTML = `${CALENDAR_ICON} Calendar`;
   document.querySelectorAll('.btn-clear').forEach(btn => {
     const label = btn.textContent.trim();
     btn.innerHTML = `${TRASHCAN_ICON} ${label}`;
   });
+  document.querySelectorAll('.stat-info').forEach(el => {
+    el.insertAdjacentHTML('afterbegin', QUESTION_MARK_ICON);
+  });
+}
 
-  // Set today's date
+export function initTooltipText() {
+  const tooltipMap = {
+    statDaysLeft:       S.TIP_DAYS_LEFT,
+    statBudgetLeft:     S.TIP_BUDGET_LEFT,
+    statDailyAllowance: S.TIP_DAILY_ALLOWANCE,
+    statCurrentPace:    S.TIP_CURRENT_PACE,
+    statPerfectTarget:  S.TIP_PERFECT_TARGET,
+    statVsTarget:       S.TIP_VS_TARGET,
+  };
+  for (const [id, tip] of Object.entries(tooltipMap)) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const tipEl = el.closest('.stat')?.querySelector('.stat-tooltip');
+    if (tipEl) tipEl.textContent = tip;
+  }
+}
+
+function initDateControls() {
   const now = new Date();
   document.getElementById('dayInput').value = now.getDate();
   setCalView(now.getFullYear(), now.getMonth());
 
-  // Select correct month length
   const daysInCurMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const sel = document.getElementById('monthLen');
   for (let i = 0; i < sel.options.length; i++) {
     if (parseInt(sel.options[i].value) === daysInCurMonth) { sel.options[i].selected = true; break; }
   }
+}
 
-  // Migrate legacy gh_token / gh_user keys if present
-  migrateFromLegacy();
-
-  // Close popups on Escape
+function bindEscapeKey() {
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (document.getElementById('calOverlay').classList.contains('open')) closeCalendar();
     if (document.getElementById('authModal').classList.contains('open')) closeAccountsModal();
   });
+}
 
-  // React to calendar changes
+function bindReqModeToggle() {
+  document.getElementById('reqModeChk').addEventListener('change', e => {
+    localStorage.setItem('pref_req_mode', e.target.checked ? '1' : '0');
+  });
+}
+
+function bindCalendarEvents() {
   window.addEventListener('calendar:closed', updateStatus);
   window.addEventListener('calendar:dayoff-changed', updateStatus);
   window.addEventListener('calendar:weekends-changed', updateStatus);
+}
 
-  // Switch account: load cached quota into calculator, then refresh in background
+function bindAccountEvents() {
   window.addEventListener('account:switch-requested', async (e) => {
     const { id } = e.detail;
     const accounts = getAccounts();
     const target = accounts.find(a => a.id === id);
     if (!target) return;
 
-    // Update selection
     saveSelectedId(id);
     renderAccountsHeader();
 
-    // Load cached quota immediately
     if (target.lastQuota) {
       const q = target.lastQuota;
       state.quotaEntitlement = q.entitlement ?? state.quotaEntitlement;
@@ -209,14 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
       syncUsage(q.pctUsed);
     }
 
-    // Fetch fresh in background (errors are displayed via _setFetchStatus in fetchRealUsage)
     await fetchRealUsage().catch(() => {});
   });
 
-  // After adding new accounts, fetch for the newly selected one
   window.addEventListener('account:switched', fetchRealUsage);
 
-  // After sign out, reset calculator to defaults
   window.addEventListener('account:signed-out', () => {
     state.quotaEntitlement = 300;
     state.quotaRemaining   = null;
@@ -225,12 +244,46 @@ document.addEventListener('DOMContentLoaded', () => {
     syncUsage(0);
     _setFetchStatus('', '');
   });
+}
+
+function restorePreferences() {
+  if (localStorage.getItem('pref_exclude_weekends') === '1') {
+    document.getElementById('excludeWeekendsChk').checked = true;
+    onWeekendsToggle();
+  }
+  if (localStorage.getItem('pref_req_mode') === '1') {
+    document.getElementById('reqModeChk').checked = true;
+  }
+}
+
+export function restoreCustomDayoffs() {
+  const d = new Date();
+  const todayKey = `${d.getFullYear()}-${d.getMonth() + 1}`;
+  if (localStorage.getItem('cal_dayoffs_month') === todayKey) {
+    const saved = localStorage.getItem('cal_dayoffs');
+    if (saved) {
+      try { JSON.parse(saved).forEach(iso => calCustomDayoffs.add(iso)); } catch { /* ignore */ }
+    }
+  }
+  syncDayoffsFromCalendar();
+}
+
+// ─── App entry point ───────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  injectSvgIcons();
+  initTooltipText();
+  initDateControls();
+  bindEscapeKey();
+  bindReqModeToggle();
+  bindCalendarEvents();
+  bindAccountEvents();
+  restorePreferences();
+  restoreCustomDayoffs();
 
   renderAllMonths();
   updateStatus();
   renderAccountsHeader();
-  // Restore header collapsed state (must be after renderAccountsHeader creates #headerToggleBtn)
-  initHeaderCollapsed();
-  // Auto-fetch on load (silent) if token saved
+  initHeaderCollapsed(); // must run after renderAccountsHeader creates #headerToggleBtn
   fetchRealUsage().catch(() => {});
 });

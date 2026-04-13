@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getAccounts, getSelectedId, saveAccounts, saveSelectedId,
   getSelectedAccount, addAccountObject, removeAccount, signOutAll,
-  addAccounts, validateTokenFormat, updateAccountQuota, migrateFromLegacy,
+  addAccounts, validateTokenFormat, updateAccountQuota,
   getSelectedToken, ghHeaders as accountGhHeaders, getNextAccountId,
 } from '../js/accounts.js';
 
@@ -255,41 +255,6 @@ describe('updateAccountQuota', () => {
     updateAccountQuota('acc-test-2', { pctUsed: 30 }, null);
     const saved = getAccounts().find(a => a.id === 'acc-test-2');
     expect(saved.plan).toBe('copilot_enterprise');
-  });
-});
-
-describe('migrateFromLegacy', () => {
-  it('migrates old gh_token and gh_user into gh_accounts', () => {
-    localStorage.setItem('gh_token', 'gho_oldtoken123');
-    localStorage.setItem('gh_user', JSON.stringify({ login: 'alice', name: 'Alice', avatar_url: 'https://example.com/a.png' }));
-    migrateFromLegacy();
-    const accounts = getAccounts();
-    expect(accounts).toHaveLength(1);
-    expect(accounts[0].token).toBe('gho_oldtoken123');
-    expect(accounts[0].login).toBe('alice');
-    expect(localStorage.getItem('gh_token')).toBeNull();
-    expect(localStorage.getItem('gh_user')).toBeNull();
-  });
-
-  it('does nothing if gh_accounts already exists', () => {
-    const a = { id: 'a1', token: 'gho_x', login: 'alice', name: '', avatar_url: '', plan: null, lastQuota: null };
-    saveAccounts([a]);
-    localStorage.setItem('gh_token', 'gho_old');
-    migrateFromLegacy();
-    expect(getAccounts()).toHaveLength(1); // not duplicated
-  });
-
-  it('does nothing if no legacy keys', () => {
-    migrateFromLegacy();
-    expect(getAccounts()).toEqual([]);
-  });
-
-  it('preserves legacy keys when gh_user is malformed JSON', () => {
-    localStorage.setItem('gh_token', 'gho_oldtoken123');
-    localStorage.setItem('gh_user', 'NOT_JSON{{{');
-    migrateFromLegacy();
-    expect(getAccounts()).toEqual([]);
-    expect(localStorage.getItem('gh_token')).toBe('gho_oldtoken123');
   });
 });
 

@@ -12,6 +12,35 @@ export function setCalView(year, month) {
 let _dayoffsByMonth = new Map();
 function _monthKey(y, m) { return `${y}-${m}`; }
 
+function _todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}`;
+}
+
+function _isCurrentMonth() {
+  const d = new Date();
+  return calViewYear === d.getFullYear() && calViewMonth === d.getMonth();
+}
+
+function _persistDayoffs() {
+  localStorage.setItem('cal_dayoffs_month', _todayKey());
+  localStorage.setItem('cal_dayoffs', JSON.stringify([...calCustomDayoffs]));
+}
+
+function _syncDayoffUiState() {
+  const count = calCustomDayoffs.size;
+  const countEl = document.getElementById('calDayoffCount');
+  if (countEl) countEl.textContent = String(count);
+
+  const summaryEl = document.getElementById('calDayoffSummary');
+  if (summaryEl) summaryEl.classList.toggle('is-active', count > 0);
+
+  for (const buttonId of ['panelClearBtn', 'calendarClearBtn']) {
+    const button = document.getElementById(buttonId);
+    if (button) button.disabled = count === 0;
+  }
+}
+
 const CAL_MONTH_NAMES = ['January','February','March','April','May','June',
   'July','August','September','October','November','December'];
 const CAL_DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -46,10 +75,23 @@ export function openCalendar() {
   _dayoffsByMonth.set(_monthKey(calViewYear, calViewMonth), new Set(calCustomDayoffs));
   document.getElementById('calExcludeWeekendsChk').checked = getExcludeWeekends();
   renderCalendar();
+  _syncDayoffUiState();
   document.getElementById('calOverlay').classList.add('open');
 }
 
 export function closeCalendar() {
+  // If user navigated away from current month, discard those selections
+  if (!_isCurrentMonth()) {
+    const savedMonth = localStorage.getItem('cal_dayoffs_month');
+    const todayKey = _todayKey();
+    calCustomDayoffs.clear();
+    if (savedMonth === todayKey) {
+      const saved = localStorage.getItem('cal_dayoffs');
+      if (saved) {
+        try { JSON.parse(saved).forEach(iso => calCustomDayoffs.add(iso)); } catch { /* ignore */ }
+      }
+    }
+  }
   _dayoffsByMonth.clear(); // discard per-session month snapshots
   document.getElementById('calOverlay').classList.remove('open');
   syncDayoffsFromCalendar();
@@ -69,7 +111,7 @@ export function closeCalendar() {
 }
 
 export function syncDayoffsFromCalendar() {
-  document.getElementById('calDayoffCount').textContent = calCustomDayoffs.size;
+  _syncDayoffUiState();
 }
 
 export function renderCalendar() {
@@ -135,7 +177,7 @@ export function calNavMonth(delta) {
   const saved = _dayoffsByMonth.get(_monthKey(calViewYear, calViewMonth));
   calCustomDayoffs.clear();
   if (saved) { for (const iso of saved) calCustomDayoffs.add(iso); }
-  document.getElementById('calDayoffCount').textContent = calCustomDayoffs.size;
+  _syncDayoffUiState();
 
   renderCalendar();
 }
@@ -146,35 +188,42 @@ export function calToggleDay(iso) {
   } else {
     calCustomDayoffs.add(iso);
   }
+  if (_isCurrentMonth()) _persistDayoffs();
   renderCalGrid();
-  document.getElementById('calDayoffCount').textContent = calCustomDayoffs.size;
+  _syncDayoffUiState();
   window.dispatchEvent(new CustomEvent('calendar:dayoff-changed'));
 }
 
 export function clearCustomDayoffs() {
+  if (_isCurrentMonth()) {
+    localStorage.removeItem('cal_dayoffs');
+    localStorage.removeItem('cal_dayoffs_month');
+  }
   calCustomDayoffs.clear();
-  document.getElementById('calDayoffCount').textContent = '0';
+  _syncDayoffUiState();
   renderCalGrid();
   window.dispatchEvent(new CustomEvent('calendar:dayoff-changed'));
 }
 
 export function onWeekendsToggle() {
   const excludeWeekends = getExcludeWeekends();
+  localStorage.setItem('pref_exclude_weekends', excludeWeekends ? '1' : '0');
   if (excludeWeekends) {
     for (const iso of [...calCustomDayoffs]) {
       const dow = new Date(iso + 'T00:00:00').getDay();
       if (dow === 0 || dow === 6) calCustomDayoffs.delete(iso);
     }
-    document.getElementById('calDayoffCount').textContent = calCustomDayoffs.size;
   }
+  _syncDayoffUiState();
   document.getElementById('calExcludeWeekendsChk').checked = excludeWeekends;
   renderCalGrid();
   window.dispatchEvent(new CustomEvent('calendar:weekends-changed'));
 }
 
 export function onCalWeekendsToggle() {
-  document.getElementById('excludeWeekendsChk').checked =
-    document.getElementById('calExcludeWeekendsChk').checked;
+  const checked = document.getElementById('calExcludeWeekendsChk').checked;
+  document.getElementById('excludeWeekendsChk').checked = checked;
+  localStorage.setItem('pref_exclude_weekends', checked ? '1' : '0');
   renderCalGrid();
   window.dispatchEvent(new CustomEvent('calendar:weekends-changed'));
 }

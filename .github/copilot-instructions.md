@@ -254,23 +254,4 @@ This is a simple **calendar-days** uniform-burn benchmark. It does **not** accou
 | Editing `index.html` directly | Don't — it's a build artifact. Edit `src/` files and rebuild |
 | XSS via user data | All user-supplied strings rendered via `escHtml()` from `auth.js` before innerHTML injection |
 
-
-## Clarifying Questions — VS Code Chat Override
-
-> **User instruction — takes highest priority over all superpowers skills** (per Instruction Priority in `using-superpowers`).
-
-This project runs in **VS Code Copilot Chat**. The brainstorming skill says "only one question per message" — **that rule does NOT apply here**.
-
-**ALWAYS batch ALL clarifying questions into a single `vscode_askQuestions` tool call.** Never ask a question in plain text and wait for a reply.
-
-You may call `vscode_askQuestions` multiple times in one task if new questions arise — that's fine and expected.
-
----
-
-## Never "Breaking Questions"
-❌ Do NOT:
-- Stop mid-task and ask a question as plain text, then wait for a new message
-- Wait for a fresh prompt to continue reasoning
-- Let the brainstorming skill's "one question per message" rule cause request interruptions
-
-This consumes extra requests and breaks the agent's thought process.
+> **Question & execution conventions** (vscode_askQuestions, SDD default, infer-before-asking) are defined in global.instructions.md and apply here.
